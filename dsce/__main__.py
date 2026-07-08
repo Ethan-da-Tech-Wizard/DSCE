@@ -17,6 +17,12 @@ from dsce.demo_kb import build_engine
 
 
 def parse_term(token: str):
+    """Interpret one command-line token as a triple term.
+
+    Order matters: "true"/"false" become booleans, then int is tried,
+    then float, and anything left stays a string (including ?variables —
+    the engine recognizes those by their leading '?', not here).
+    """
     if token.lower() in ("true", "false"):
         return token.lower() == "true"
     try:
