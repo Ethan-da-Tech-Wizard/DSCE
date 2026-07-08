@@ -1,0 +1,10 @@
+DSCE — Deterministic Semantic Computation Engine
+Copyright 2026 Ethan Kilmer
+
+The DSCE architecture ("vials" as explicit knowledge containers, "sand" as
+flowing activation, deterministic flooding, and proof construction) was
+originally proposed by Ethan Kilmer.
+
+This product includes software developed as part of the DSCE project
+(https://github.com/Ethan-da-Tech-Wizard/DSCE), licensed under the
+Apache License, Version 2.0.
