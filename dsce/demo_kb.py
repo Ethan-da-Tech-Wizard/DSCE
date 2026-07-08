@@ -1,7 +1,27 @@
 """A small demonstration knowledge base.
 
-Four vials spanning two unrelated domains, so that queries visibly
-activate only the vials they need and leave the rest dormant.
+Four vials spanning two unrelated domains, chosen so that queries visibly
+activate only the vials they need and leave the rest dormant:
+
+    DOMAIN 1 — mortality (a classic syllogism, split across two vials):
+      philosophers   axioms: socrates/plato are human   (facts only)
+      biology        rules: human -> mammal -> mortal   (rules only)
+      Splitting facts from rules forces the flood to CHAIN across vials:
+      neither vial alone can prove "socrates is mortal".
+
+    DOMAIN 2 — geometry (demonstrates computed conclusions):
+      geometry       rules: square -> rectangle, area = width x height
+      measurements   axioms: the courtyard's and plaza's surveyed sizes
+      The plaza is described only as a square with side 25, so its area
+      proof must first DERIVE that it is a rectangle with width/height 25,
+      then COMPUTE 25 * 25 — a three-rule chain ending in arithmetic.
+
+Note the neighbor links (philosophers -> biology, measurements ->
+geometry): they encode "if you're thinking about my facts you'll want
+these rules", guaranteeing the rule vials wake even when no goal constant
+mentions them. Confidence values are sub-1.0 where the source is fallible
+(historical texts: 0.99, a physical site survey: 0.97) so confidence
+propagation is visible in proofs.
 """
 
 from __future__ import annotations
