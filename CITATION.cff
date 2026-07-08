@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use DSCE, please cite it as below."
+title: "DSCE: Deterministic Semantic Computation Engine"
+type: software
+authors:
+  - family-names: Kilmer
+    given-names: Ethan
+repository-code: "https://github.com/Ethan-da-Tech-Wizard/DSCE"
+license: Apache-2.0
+abstract: >-
+  DSCE is a reasoning architecture in which knowledge is stored in explicit
+  containers ("vials") holding facts, rules, evidence, and confidence, and
+  reasoning is performed by flooding the vial network with activation
+  particles ("sand") until enough evidence accumulates to construct a
+  verifiable proof of the answer. Given the same knowledge base and query,
+  the engine deterministically produces the identical result and a complete,
+  inspectable derivation trace.
+keywords:
+  - deterministic reasoning
+  - semantic computation
+  - knowledge representation
+  - proof engine
+  - explainable AI
