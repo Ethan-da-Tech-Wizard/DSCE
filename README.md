@@ -121,17 +121,35 @@ dsce/
   demo_kb.py   a small four-vial demonstration knowledge base
   __main__.py  CLI entry point
 tests/         test suite (unification, inference, determinism, sparsity)
-docs/DESIGN.md the architecture in detail, and the road ahead
+docs/          full documentation set — see below
 ```
+
+## Documentation
+
+Every source file carries heavy inline documentation; start there, or with:
+
+| Document | What it answers |
+|---|---|
+| [docs/CODE_WALKTHROUGH.md](docs/CODE_WALKTHROUGH.md) | *"What is every part of the code doing?"* — file-by-file tour plus a tick-by-tick trace of a real query |
+| [docs/DESIGN.md](docs/DESIGN.md) | the architecture in detail, related work, the road ahead |
+| [docs/PROBLEM_STATEMENT.md](docs/PROBLEM_STATEMENT.md) | why DSCE exists — the four structural problems it inverts |
+| [docs/PRD.md](docs/PRD.md) | product requirements: vision, users, principles, success metrics |
+| [docs/FRD.md](docs/FRD.md) | functional requirements: exact observable behavior, traced to tests |
+| [docs/SRD.md](docs/SRD.md) | software requirements: architecture rules, determinism rules, performance limits |
+| [docs/RISK_REGISTER.md](docs/RISK_REGISTER.md) | scored risks with mitigations (top risk: the O(\|WM\|^P) naive join) |
+| [docs/MILESTONES.md](docs/MILESTONES.md) | M0–M6 roadmap with exit criteria, mapped to risks and requirements |
 
 ## Status and direction
 
 This prototype demonstrates the core mechanics: vials, sand, deterministic
 flooding, computed conclusions, confidence propagation, and proof
-construction. The longer-term direction — natural-language intent parsing,
-a planner/architecture generator, documentation-backed vial libraries, and
-eventually AI/DE assistant systems built on a DSCE core — is sketched in
-[docs/DESIGN.md](docs/DESIGN.md).
+construction. It is deliberately built for clarity, not speed — rule
+matching is a naive O(|WM|^P) join, fine at demo scale and the first thing
+milestone M3 replaces. The longer-term direction — natural-language intent
+parsing, a planner/architecture generator, documentation-backed vial
+libraries, and eventually AI/DE assistant systems built on a DSCE core —
+is laid out milestone by milestone in
+[docs/MILESTONES.md](docs/MILESTONES.md).
 
 ## License and attribution
 
