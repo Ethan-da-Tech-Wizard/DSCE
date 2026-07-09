@@ -7,6 +7,6 @@
     ["cpp_std", "is_a", "data_library"],
     ["cpp_std", "provides", "dictionary_model"],
 
-    ["cpp_std", "code_dict_data", "#include <map>\n#include <string>\n    std::map<std::string, std::string> dict = {\n        {\"apple\", \"A round red or green edible pome fruit.\"},\n        {\"banana\", \"A long curved fruit which grows in clusters and has soft pulpy flesh and yellow skin.\"},\n        {\"cherry\", \"A small, round, red or black stone fruit.\"}\n    };\n"]
+    ["cpp_std", "code_dict_data", "#include <map>\n#include <string>\n#include <fstream>\n#include <sstream>\n    std::map<std::string, std::string> dict;\n    std::ifstream file(\"dictionary.tsv\");\n    std::string line;\n    while (std::getline(file, line)) {\n        size_t tab = line.find('\\t');\n        if (tab != std::string::npos) {\n            dict[line.substr(0, tab)] = line.substr(tab + 1);\n        }\n    }\n"]
   ]
 }

@@ -12,4 +12,9 @@ build/
 # Local Scratchfiles
 scratch/
 
+# Dictionary TSV
+dictionary.tsv
+*.tsv
+
+
 
