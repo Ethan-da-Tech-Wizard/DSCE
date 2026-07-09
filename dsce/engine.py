@@ -1,32 +1,42 @@
-"""The DSCE flood engine — the heart of the system.
+"""The DSCE flood engine.
 
-WHAT THIS FILE DOES
-===================
-This file implements the "sand flooding" reasoning loop. Everything else in
-the package is a data structure; this is the algorithm that brings it to
-life. Reasoning proceeds in discrete rounds called "ticks":
+Reasoning proceeds in discrete ticks:
 
-  1. A query is parsed into a goal pattern — a triple that may contain
-     variables, e.g. ("socrates", "is_mortal", "?answer"). The goal's
-     constants ("socrates", "is_mortal") become the first sand grains.
+  1. A query is parsed into a goal pattern. Its constants become the first
+     sand grains.
   2. Each tick, grains wake up every dormant vial indexed under their term,
-     and every newly woken vial also wakes its declared neighbors.
-  3. Newly activated vials pour their axiom facts into a shared "working
-     memory" (the pool of everything known-so-far in this query). Then ALL
-     active vials fire their rules against working memory. Each rule firing
-     may add a brand-new fact, and each new fact emits fresh sand grains
-     carrying its subject and object.
-  4. The flood stops when a tick produces nothing new (a "fixpoint" — the
-     sand has settled) or when the tick budget runs out (a safety valve
-     against rule sets that generate facts forever).
-  5. Answers are all working-memory facts that unify with the goal pattern.
-     Because every fact remembers HOW it was derived, each answer comes
-     with a complete proof tree.
+     and firing vials wake their declared neighbors.
+  3. Activated vials pour their axiom facts into shared working memory and
+     fire their rules against everything derived so far. Each new fact
+     emits fresh grains carrying its terms.
+  4. The flood stops at fixpoint (no new facts, no new vials) or when the
+     tick budget runs out. Answers are all working-memory facts matching
+     the goal, each with a full proof tree.
 
-WHY IT IS DETERMINISTIC
+Everything is iterated in sorted order and no randomness is used, so the
+same knowledge base and query always produce the identical result — the
+"deterministic" in DSCE.
+
+DETAILED FLOOD DYNAMICS
 =======================
-Every place where iteration order could matter — vial ids, facts in working
-memory, premise matching — is iterated in explicitly sorted order, and no
+The "sand" analogy is literal spreading activation. A grain is not data; it
+is a marker that "someone is thinking about term T". Vials are indexed by
+every term they mention. When term T is active, every vial indexed under T
+wakes up.
+
+Neighbor links allow topological propagation: if vial A wakes up, it waken
+its neighbors in the same tick. This lets a query about a Socrates (in vial
+philosophers) flow automatically to biology rules, even if Socrates was
+never mentioned in the biology vial.
+
+Axioms are poured once per vial activation. Rules are fired continuously on
+every tick. When a rule concludes a new fact, that fact's terms (subject
+and object) are cast into the next tick's sand.
+
+DETERMINISTIC STABILITY
+=======================
+To guarantee byte-identical execution, every collection is iterated in sorted
+order (see facts.sort_key) at every decision point, and no database or hash
 randomness is used anywhere. Python dicts preserve insertion order, so the
 working memory and active-vial set are themselves reproducible. Same
 knowledge base + same query = byte-identical result, every run.
@@ -47,8 +57,9 @@ docs/MILESTONES.md and requirement SRD-P2 in docs/SRD.md.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Optional
 
-from dsce.facts import Bindings, Fact, Pattern, constants, sort_key, substitute, unify
+from dsce.facts import Bindings, Fact, Pattern, constants, sort_key, substitute, unify, is_more_specific
 from dsce.proof import Derivation, Proof, fact_str
 from dsce.sand import Grain
 from dsce.vial import Rule, Vial
@@ -94,6 +105,7 @@ class Result:
     dormant: tuple         # vial ids the flood never reached (sorted)
     grains: int            # total sand grains emitted over the whole flood
     facts_derived: int     # size of working memory when the flood settled
+    conflicts: tuple = ()  # functional predicate conflict violations
 
     def summary(self) -> str:
         """Render the whole result as human-readable text (used by the CLI)."""
@@ -105,11 +117,34 @@ class Result:
             f"activated vials: {', '.join(self.activated) if self.activated else '(none)'}",
             f"dormant vials:   {', '.join(self.dormant) if self.dormant else '(none)'}",
         ]
+        
+        if self.conflicts:
+            lines.append("\n!!! CONFLICT WARNING !!!")
+            for new_f, old_f in self.conflicts:
+                lines.append(f"Conflict detected for functional predicate '{new_f[1]}' on subject '{new_f[0]}':")
+                lines.append(f"  - {fact_str(new_f)}")
+                lines.append(f"  - {fact_str(old_f)}")
+            lines.append("")
+            
         if not self.answers:
             lines.append("no proof found.")
+            
         for i, answer in enumerate(self.answers, 1):
             lines.append(f"answer {i} (confidence {answer.confidence:.3f}):")
             lines.append(answer.proof.render())
+            
+            # Check if this answer contains more specific context than any other answer
+            specificity_notes = []
+            for j, other in enumerate(self.answers, 1):
+                if i != j:
+                    if is_more_specific(answer.fact[0], other.fact[0], answer.proof.derivations):
+                        specificity_notes.append(
+                            f"Answer {i} ('{answer.fact[0]}') contains more detailed/specific context than Answer {j} ('{other.fact[0]}')."
+                        )
+            if specificity_notes:
+                for note in specificity_notes:
+                    lines.append(f"  [Note] {note}")
+                    
         return "\n".join(lines)
 
 
@@ -125,7 +160,7 @@ class Engine:
         print(result.summary())
     """
 
-    def __init__(self, max_ticks: int = 50):
+    def __init__(self, max_ticks: int = 50, store=None):
         # Safety valve: a rule like "n -> n+1" would otherwise derive new
         # facts forever. After max_ticks rounds the flood is cut off even
         # if it hasn't reached fixpoint. 50 is generous for the demo KB
@@ -138,6 +173,20 @@ class Engine:
         # sand grain finds which vials to wake. Built lazily by _index()
         # and invalidated whenever a vial is added.
         self._term_index: dict = {}
+        self.store = store
+        self.predicates: dict = {}  # predicate name -> properties
+
+    def register_predicate(self, name: str, functional: bool = False) -> None:
+        self.predicates[name] = {"functional": functional}
+
+    def _check_conflict(self, fact: Fact, wm: dict) -> Optional[tuple]:
+        subj, pred, obj = fact
+        if pred in self.predicates and self.predicates[pred].get("functional", False):
+            for existing_fact in wm:
+                e_subj, e_pred, e_obj = existing_fact
+                if e_subj == subj and e_pred == pred and e_obj != obj:
+                    return (fact, existing_fact)
+        return None
 
     def add_vial(self, vial: Vial) -> None:
         """Register a vial. Ids must be unique — silently replacing
@@ -190,6 +239,18 @@ class Engine:
         grains: list = [Grain(term, "query", 0) for term in constants(goal)]
         total_grains = len(grains)
         ticks = 0
+        conflicts = []
+
+        def get_vials_for_term(term):
+            v_ids = list(index.get(term, ()))
+            if self.store is not None:
+                store_ids = self.store.get_vial_ids_for_term(term)
+                for v_id in store_ids:
+                    if v_id not in self.vials:
+                        self.vials[v_id] = self.store.load_vial(v_id)
+                    if v_id not in v_ids:
+                        v_ids.append(v_id)
+            return tuple(v_ids)
 
         # --- THE FLOOD LOOP ---------------------------------------------
         for tick in range(1, self.max_ticks + 1):
@@ -199,7 +260,7 @@ class Engine:
             # isn't active yet.
             newly_active = []
             for grain in grains:
-                for vial_id in index.get(grain.term, ()):
+                for vial_id in get_vials_for_term(grain.term):
                     if vial_id not in active:
                         active[vial_id] = None
                         newly_active.append(vial_id)
@@ -211,6 +272,8 @@ class Engine:
             # A wakes B, B's neighbors wake too, and so on.
             for vial_id in list(newly_active):
                 for neighbor in self.vials[vial_id].neighbors:
+                    if self.store is not None and neighbor not in self.vials:
+                        self.vials[neighbor] = self.store.load_vial(neighbor)
                     if neighbor in self.vials and neighbor not in active:
                         active[neighbor] = None
                         newly_active.append(neighbor)
@@ -224,6 +287,9 @@ class Engine:
                 vial = self.vials[vial_id]
                 for fact in sorted(vial.facts, key=sort_key):
                     if fact not in wm:
+                        conflict = self._check_conflict(fact, wm)
+                        if conflict:
+                            conflicts.append(conflict)
                         wm[fact] = Derivation(
                             fact=fact,
                             vial_id=vial_id,
@@ -248,6 +314,9 @@ class Engine:
                     for bindings in self._match(rule.premises, wm):
                         fact, derivation = self._conclude(rule, vial, bindings, wm)
                         if fact is not None and fact not in wm:
+                            conflict = self._check_conflict(fact, wm)
+                            if conflict:
+                                conflicts.append(conflict)
                             wm[fact] = derivation
                             new_facts.append(fact)
 
@@ -291,6 +360,7 @@ class Engine:
             dormant=dormant,
             grains=total_grains,
             facts_derived=len(wm),
+            conflicts=tuple(conflicts),
         )
 
     def _match(self, premises: tuple, wm: dict):
