@@ -9,3 +9,7 @@ build/
 # Rust
 /target/
 
+# Local Scratchfiles
+scratch/
+
+
