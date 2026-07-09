@@ -149,7 +149,7 @@ pub fn harvest_offline(request: &str) -> Harvest {
         push(needs("grid_layout"), &mut triples);
         push(needs("graphics"), &mut triples);
     }
-    if matches_any(&tokens, &["game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation"]) {
+    if matches_any(&tokens, &["game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation", "gui"]) {
         push(needs("graphics"), &mut triples);
     }
     if matches_any(&tokens, &["multiplayer", "online", "network", "networked", "server", "websocket", "websockets"]) {

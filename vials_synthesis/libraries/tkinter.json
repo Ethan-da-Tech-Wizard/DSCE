@@ -1,0 +1,14 @@
+{
+  "id": "tkinter_graphics",
+  "concept": "Python Tkinter graphics library documentation",
+  "confidence": 1.0,
+  "evidence": ["Python standard library Tkinter documentation"],
+  "facts": [
+    ["tkinter", "is_a", "graphics_library"],
+    ["tkinter", "provides", "graphics"],
+    
+    ["tkinter", "code_text_render", "import tkinter as tk\nimport random\nroot = tk.Tk()\nroot.title('GUI Random Generator')\nroot.geometry('300x200')\nlabel = tk.Label(root, text='Press SPACE', font=('Arial', 24))\nlabel.pack(pady=50)\n"],
+    ["tkinter", "code_events_space", "def generate(event):\n    label.config(text=str(random.randint(1, 100)))\nroot.bind('<space>', generate)\n"],
+    ["tkinter", "code_loop", "root.mainloop()\n"]
+  ]
+}

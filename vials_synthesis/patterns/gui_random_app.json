@@ -1,0 +1,36 @@
+{
+  "id": "gui_random_app",
+  "concept": "Generic GUI Random Number Generator app pattern",
+  "rules": [
+    {
+      "name": "bind-gui-random-generator",
+      "premises": [
+        ["?app", "needs", "random_generation"],
+        ["?lib", "provides", "random_generation"]
+      ],
+      "conclusion": ["?app", "uses_generator", "?lib"]
+    },
+    {
+      "name": "bind-gui-random-graphics",
+      "premises": [
+        ["?app", "needs", "graphics"],
+        ["?lib", "provides", "graphics"]
+      ],
+      "conclusion": ["?app", "uses_graphics", "?lib"]
+    },
+    {
+      "name": "assemble-gui-random-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "uses_generator", "?gen_lib"],
+        ["?app", "uses_graphics", "?gfx_lib"],
+        ["?gfx_lib", "code_text_render", "?draw_code"],
+        ["?gfx_lib", "code_events_space", "?events_code"],
+        ["?gfx_lib", "code_loop", "?loop_code"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = '# assembled by the DSCE generic GUI random app assembler\\n' + ?draw_code + ?events_code + ?loop_code"
+    }
+  ],
+  "evidence": ["GUI random number generator template logic"]
+}
