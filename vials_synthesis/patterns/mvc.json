@@ -22,7 +22,7 @@
       "name": "view-init",
       "premises": [
         ["?app", "uses", "?lib"],
-        ["?lib", "is_a", "graphics_library"],
+        ["?lib", "is_a", "python_graphics_library"],
         ["?lib", "code_init", "?init"]
       ],
       "conclusion": ["?app", "code_view_init", "?init"]
@@ -72,7 +72,7 @@
       "premises": [
         ["?app", "code_net", "?net"],
         ["?app", "uses", "?lib"],
-        ["?lib", "is_a", "graphics_library"],
+        ["?lib", "is_a", "python_graphics_library"],
         ["?lib", "code_events", "?events"]
       ],
       "conclusion": ["?app", "code_controller", "?code"],
