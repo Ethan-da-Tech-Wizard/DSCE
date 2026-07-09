@@ -1,0 +1,18 @@
+{
+  "id": "cuda_toolkit",
+  "concept": "NVIDIA CUDA GPU computing toolkit: kernel launch syntax, driver dependency, nvcc toolchain.",
+  "confidence": 1.0,
+  "evidence": [
+    "NVIDIA CUDA C++ Programming Guide (docs.nvidia.com/cuda) — __global__ kernels, <<<>>> launch syntax, cudaDeviceSynchronize",
+    "NVIDIA CUDA Toolkit release notes — NVIDIA driver requirement"
+  ],
+  "facts": [
+    ["cuda", "is_a", "framework"],
+    ["cuda", "provides", "gpu_acceleration"],
+    ["cuda", "depends_on", "nvidia_driver"],
+    ["lang_cuda", "file_extension", "cu"],
+    ["lang_cuda", "build_command", "nvcc main.cu -o main"],
+    ["cuda", "code_banner", "// assembled by the DSCE framework assembler (CUDA C++)\n"],
+    ["cuda", "code_snippet", "#include <cstdio>\n\n__global__ void hello() {\n    printf(\"Hello from CUDA thread %d\\n\", threadIdx.x);\n}\n\nint main() {\n    hello<<<1, 8>>>();\n    cudaDeviceSynchronize();\n    return 0;\n}\n"]
+  ]
+}

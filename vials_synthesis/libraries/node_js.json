@@ -1,0 +1,19 @@
+{
+  "id": "node_js_runtime",
+  "concept": "Node.js JavaScript runtime documentation: console, ECMAScript Math.random. Also documents the runtime's own dependency graph (V8, libuv).",
+  "confidence": 1.0,
+  "evidence": [
+    "Node.js official documentation (nodejs.org/docs) — console.log; dependencies page (V8, libuv)",
+    "ECMAScript Language Specification / MDN — Math.random, Math.floor"
+  ],
+  "facts": [
+    ["node_js", "is_a", "language_library"],
+    ["node_js", "implements_language", "lang_javascript"],
+    ["node_js", "depends_on", "v8_engine"],
+    ["node_js", "depends_on", "libuv"],
+    ["lang_javascript", "file_extension", "js"],
+    ["lang_javascript", "run_command", "node main.js"],
+    ["node_js", "code_banner", "// assembled by the DSCE polyglot CLI assembler (JavaScript / Node.js)\n"],
+    ["node_js", "code_random_cli", "console.log(Math.floor(Math.random() * 100) + 1);\n"]
+  ]
+}

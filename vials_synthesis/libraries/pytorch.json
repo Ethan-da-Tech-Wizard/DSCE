@@ -1,0 +1,17 @@
+{
+  "id": "pytorch_framework",
+  "concept": "PyTorch tensor computation framework: tensor API documentation, Python dependency, pip install channel.",
+  "confidence": 1.0,
+  "evidence": [
+    "PyTorch official documentation (pytorch.org/docs) — torch.rand, torch.matmul",
+    "PyTorch installation guide (pytorch.org/get-started) — pip package 'torch', Python requirement"
+  ],
+  "facts": [
+    ["pytorch", "is_a", "framework"],
+    ["pytorch", "provides", "tensor_computation"],
+    ["pytorch", "depends_on", "python_runtime"],
+    ["pytorch", "install_command", "pip install torch"],
+    ["pytorch", "code_banner", "# assembled by the DSCE framework assembler (PyTorch)\n"],
+    ["pytorch", "code_snippet", "import torch\n\nx = torch.rand(3, 3)\ny = torch.rand(3, 3)\nprint(torch.matmul(x, y))\n"]
+  ]
+}

@@ -1,11 +1,17 @@
 {
   "id": "cpp_std_library",
-  "concept": "C++ standard library data structures (std::map, etc.) documentation",
+  "concept": "C++ standard library documentation: data structures (std::map, etc.) and the <random> engine/distribution API",
   "confidence": 1.0,
-  "evidence": ["C++ Standard Library reference"],
+  "evidence": ["C++ Standard Library reference — <map>, <random> (std::mt19937, std::uniform_int_distribution), <iostream>"],
   "facts": [
     ["cpp_std", "is_a", "data_library"],
     ["cpp_std", "provides", "dictionary_model"],
+    ["cpp_std", "implements_language", "lang_cpp"],
+    ["lang_cpp", "file_extension", "cpp"],
+    ["lang_cpp", "build_command", "g++ main.cpp -o main"],
+    ["lang_cpp", "run_command", "./main"],
+    ["cpp_std", "code_banner", "// assembled by the DSCE polyglot CLI assembler (C++)\n"],
+    ["cpp_std", "code_random_cli", "#include <iostream>\n#include <random>\n\nint main() {\n    std::random_device rd;\n    std::mt19937 gen(rd());\n    std::uniform_int_distribution<> dist(1, 100);\n    std::cout << dist(gen) << std::endl;\n    return 0;\n}\n"],
 
     ["cpp_std", "code_dict_data", "#include <map>\n#include <string>\n#include <fstream>\n#include <sstream>\n    std::map<std::string, std::string> dict;\n    std::ifstream file(\"dictionary.tsv\");\n    std::string line;\n    while (std::getline(file, line)) {\n        size_t tab = line.find('\\t');\n        if (tab != std::string::npos) {\n            dict[line.substr(0, tab)] = line.substr(tab + 1);\n        }\n    }\n"]
   ]

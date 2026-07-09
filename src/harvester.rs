@@ -39,14 +39,23 @@ pub const PROMPT_TEMPLATE: &str = r#"You are the Semantic Harvester for the DSCE
 Translate the user's software request into a Datalog goal and vocabulary triples.
 
 The knowledge base understands this generic vocabulary:
-  capabilities (via "needs"):    graphics, grid_layout, networking, persistence
+  capabilities (via "needs"):    graphics, grid_layout, networking, persistence,
+                                 random_generation, dictionary_model, cpp_graphics,
+                                 tensor_computation, gpu_acceleration, vector_search,
+                                 web_ui, desktop_web, containerization, orchestration
+  languages (via "target_language"): lang_python, lang_rust, lang_c, lang_cpp,
+                                 lang_csharp, lang_go, lang_sql, lang_assembly,
+                                 lang_javascript
   feature classes (via "is_a"):  state_machine, application
-  predicates:                    needs, has_feature, is_a
+  predicates:                    needs, has_feature, is_a, target_language
 
 Rules:
 - Invent one snake_case application name derived from the request.
 - Always assert [app, "is_a", "application"].
 - Map every requested capability to a [app, "needs", capability] triple.
+- Map every explicitly requested programming language to a
+  [app, "target_language", lang_*] triple; assert lang_python when the
+  request names no language.
 - Map stateful behaviors (scores, turns, phases, modes) to a named feature:
   [app, "has_feature", feature] plus [feature, "is_a", "state_machine"].
 - Use ONLY the vocabulary above; do not invent new predicates or capabilities.
@@ -104,12 +113,28 @@ fn matches_any(tokens: &[String], keywords: &[&str]) -> bool {
     tokens.iter().any(|t| keywords.contains(&t.as_str()))
 }
 
+/// Explicit programming-language targets, checked in a fixed order.
+/// Each detected language becomes one `[app, "target_language", lang_*]`
+/// triple; the `lang_` prefix keeps common words ("go", "c") from
+/// colliding with unrelated entity names in the knowledge base.
+const LANGUAGE_KEYWORDS: &[(&str, &[&str])] = &[
+    ("lang_assembly", &["assembly", "asm", "nasm", "x86"]),
+    ("lang_c", &["c"]),
+    ("lang_cpp", &["c++", "cpp", "cplusplus"]),
+    ("lang_csharp", &["c#", "csharp", "dotnet"]),
+    ("lang_go", &["go", "golang"]),
+    ("lang_javascript", &["javascript", "js", "node", "nodejs"]),
+    ("lang_python", &["python", "python3", "py"]),
+    ("lang_rust", &["rust"]),
+    ("lang_sql", &["sql"]),
+];
+
 /// Deterministic, dependency-free harvesting: keyword-match the request
 /// against the built-in vocabulary. Same request, same harvest, every time.
 pub fn harvest_offline(request: &str) -> Harvest {
     let tokens: Vec<String> = request
         .to_lowercase()
-        .split(|c: char| !c.is_alphanumeric() && c != '+')
+        .split(|c: char| !c.is_alphanumeric() && c != '+' && c != '#')
         .filter(|t| !t.is_empty())
         .map(String::from)
         .collect();
@@ -155,7 +180,7 @@ pub fn harvest_offline(request: &str) -> Harvest {
         push(needs("grid_layout"), &mut triples);
         push(needs("graphics"), &mut triples);
     }
-    if matches_any(&tokens, &["game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation", "gui"]) {
+    if matches_any(&tokens, &["game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation", "gui", "tkinter", "pygame"]) {
         push(needs("graphics"), &mut triples);
     }
     if matches_any(&tokens, &["multiplayer", "online", "network", "networked", "server", "websocket", "websockets"]) {
@@ -181,6 +206,48 @@ pub fn harvest_offline(request: &str) -> Harvest {
         for fact in feature("game_loop") {
             push(fact, &mut triples);
         }
+    }
+
+    // Framework and API capabilities: each keyword group maps to one
+    // abstract capability that a framework vial "provides".
+    if matches_any(&tokens, &["pytorch", "torch", "tensor", "tensors"]) {
+        push(needs("tensor_computation"), &mut triples);
+    }
+    if matches_any(&tokens, &["cuda", "gpu"]) {
+        push(needs("gpu_acceleration"), &mut triples);
+    }
+    if matches_any(&tokens, &["faiss", "embedding", "embeddings"]) {
+        push(needs("vector_search"), &mut triples);
+    }
+    if matches_any(&tokens, &["react", "jsx"]) {
+        push(needs("web_ui"), &mut triples);
+    }
+    if matches_any(&tokens, &["electron"]) {
+        push(needs("desktop_web"), &mut triples);
+    }
+    if matches_any(&tokens, &["docker", "dockerfile", "container", "containers", "containerize", "containerized"]) {
+        push(needs("containerization"), &mut triples);
+    }
+    if matches_any(&tokens, &["kubernetes", "k8s", "orchestrate", "orchestration"]) {
+        push(needs("orchestration"), &mut triples);
+    }
+
+    // Target language: every explicitly named language is asserted, in the
+    // fixed LANGUAGE_KEYWORDS order. When the request names none, Python is
+    // the default target — the assembly patterns key on this triple, so an
+    // unqualified request keeps producing the classic Python program.
+    let mut language_found = false;
+    for (lang, keywords) in LANGUAGE_KEYWORDS {
+        if matches_any(&tokens, keywords) {
+            push((a.clone(), Term::str("target_language"), Term::str(*lang)), &mut triples);
+            language_found = true;
+        }
+    }
+    if !language_found {
+        push(
+            (a.clone(), Term::str("target_language"), Term::str("lang_python")),
+            &mut triples,
+        );
     }
 
     Harvest {
@@ -223,6 +290,60 @@ mod tests {
         let b = harvest_offline("Make a multiplayer grid game with a scoring system");
         assert_eq!(a.triples, b.triples);
         assert_eq!(a.goal, b.goal);
+    }
+
+    #[test]
+    fn explicit_languages_are_harvested() {
+        let cases = [
+            ("Make a random number generator in Rust", "lang_rust"),
+            ("Make a random number generator in C", "lang_c"),
+            ("Make a random number generator in C++", "lang_cpp"),
+            ("Make a random number generator in C#", "lang_csharp"),
+            ("Make a random number generator in Go", "lang_go"),
+            ("Write a random number generator in SQL", "lang_sql"),
+            ("Make a random number generator in assembly", "lang_assembly"),
+            ("Make a random number generator in JavaScript", "lang_javascript"),
+            ("Make a random number generator in Python", "lang_python"),
+        ];
+        for (request, lang) in cases {
+            let h = harvest_offline(request);
+            let fact = (t(&h.app), t("target_language"), t(lang));
+            assert!(h.triples.contains(&fact), "{request:?} did not harvest {lang}");
+        }
+    }
+
+    #[test]
+    fn python_is_the_default_target_language() {
+        let h = harvest_offline("Make a random number generator");
+        assert!(h
+            .triples
+            .contains(&(t(&h.app), t("target_language"), t("lang_python"))));
+    }
+
+    #[test]
+    fn explicit_language_replaces_the_default() {
+        let h = harvest_offline("Make a random number generator in Rust");
+        assert!(!h
+            .triples
+            .contains(&(t(&h.app), t("target_language"), t("lang_python"))));
+    }
+
+    #[test]
+    fn framework_keywords_map_to_capabilities() {
+        let cases = [
+            ("Train a PyTorch model", "tensor_computation"),
+            ("Write a CUDA kernel", "gpu_acceleration"),
+            ("Build a FAISS index", "vector_search"),
+            ("Make a React page", "web_ui"),
+            ("Make an Electron app", "desktop_web"),
+            ("Containerize this with Docker", "containerization"),
+            ("Deploy it on Kubernetes", "orchestration"),
+        ];
+        for (request, capability) in cases {
+            let h = harvest_offline(request);
+            let fact = (t(&h.app), t("needs"), t(capability));
+            assert!(h.triples.contains(&fact), "{request:?} did not harvest {capability}");
+        }
     }
 
     #[test]

@@ -160,6 +160,56 @@ Documentation predicates (`param`, `returns`, ...) are registered as
 vocabulary ("None", "size") cannot build activation bridges between
 unrelated libraries.
 
+### Polyglot synthesis
+
+The harvester detects an explicit target language and asserts a
+`(app, target_language, lang_*)` triple (Python is the default when no
+language is named). The `polyglot_cli_app` pattern binds that triple to
+whichever library vial `implements_language` it — the pattern itself names
+no concrete language, so adding a language means dropping in one JSON vial.
+Every language vial cites its authoritative source (ISO standards, official
+standard-library documentation) in its `evidence`:
+
+| Language   | Vial                            | Source cited                          |
+|------------|---------------------------------|---------------------------------------|
+| Python     | `libraries/random.json`         | Python standard library docs           |
+| Rust       | `libraries/rust_std.json`       | doc.rust-lang.org/std                  |
+| C          | `libraries/c_std.json`          | ISO/IEC 9899 standard library          |
+| C++        | `libraries/cpp_std.json`        | C++ standard library (`<random>`)      |
+| C#         | `libraries/csharp_dotnet.json`  | .NET API browser (learn.microsoft.com) |
+| Go         | `libraries/go_std.json`         | pkg.go.dev standard library            |
+| SQL        | `libraries/sql_sqlite.json`     | sqlite.org / ISO/IEC 9075              |
+| Assembly   | `libraries/x86_64_assembly.json`| Intel SDM, System V AMD64 ABI, NASM    |
+| JavaScript | `libraries/node_js.json`        | nodejs.org docs, ECMAScript spec       |
+
+```console
+$ cargo run -- --synthesize "Make a random number generator in Rust"
+$ cargo run -- --synthesize "Make a random number generator in Go"
+$ cargo run -- --synthesize "Write a random number generator in SQL"
+```
+
+### Frameworks, APIs, and dependency resolution
+
+Framework vials (`pytorch`, `cuda`, `faiss`, `react`, `electron`, `docker`,
+`kubernetes`) document each framework's starter API, its `depends_on`
+graph, and its documented install channel, all sourced from the official
+documentation. The `framework_app` pattern assembles the starter script;
+`container_app` assembles Dockerfiles and Kubernetes Deployment manifests;
+and `dependency_resolution` computes the transitive dependency closure as
+plain Datalog:
+
+```console
+$ cargo run -- --synthesize "Make an Electron desktop app"
+resolved dependencies: chromium, libuv, node_js, v8_engine
+install steps:
+  $ npm install electron
+
+--- assembled program #1 (confidence 1.000) ---
+// assembled by the DSCE framework assembler (Electron)
+const { app, BrowserWindow } = require('electron');
+...
+```
+
 ## Using it as a library
 
 ```python

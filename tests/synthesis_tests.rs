@@ -28,20 +28,38 @@ fn synthesis_kb_loads_completely() {
     assert_eq!(
         ids,
         vec![
+            "c_std_library",
             "cli_app",
+            "container_app",
             "cpp_gui_app",
             "cpp_std_library",
+            "csharp_dotnet_library",
+            "cuda_toolkit",
+            "dependency_resolution",
+            "docker_container",
+            "electron_framework",
             "english_dictionary",
+            "faiss_vector_search",
             "finite_state_machine",
+            "framework_app",
+            "go_std_library",
             "grid_layout",
             "gui_random_app",
+            "kubernetes_orchestration",
             "mvc",
+            "node_js_runtime",
+            "polyglot_cli_app",
             "pygame_graphics",
+            "pytorch_framework",
             "qt_cpp_graphics",
             "random_generator",
+            "react_framework",
+            "rust_std_library",
+            "sql_sqlite_library",
             "sqlite_databases",
             "tkinter_graphics",
             "websockets_networking",
+            "x86_64_assembly",
         ]
     );
 }
@@ -189,6 +207,193 @@ fn cpp_gui_app_synthesis() {
         }
     }
     assert!(cpp_found, "C++ GUI program was not assembled by the engine");
+}
+
+/// All assembled program texts from one request.
+fn assembled_codes(request: &str) -> Vec<String> {
+    synthesize(request)
+        .answers
+        .iter()
+        .filter_map(|a| match a.bindings.get("?code") {
+            Some(Term::Str(code)) => Some(code.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The single code answer whose banner (first line) contains `marker`.
+fn code_with_banner(request: &str, marker: &str) -> String {
+    let codes = assembled_codes(request);
+    let hits: Vec<&String> = codes
+        .iter()
+        .filter(|c| c.lines().next().unwrap_or("").contains(marker))
+        .collect();
+    assert_eq!(
+        hits.len(),
+        1,
+        "expected exactly one {marker:?} program for {request:?}, banners: {:?}",
+        codes.iter().map(|c| c.lines().next().unwrap_or("")).collect::<Vec<_>>()
+    );
+    hits[0].clone()
+}
+
+#[test]
+fn rust_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in Rust", "(Rust)");
+    assert!(code.contains("use std::time::{SystemTime, UNIX_EPOCH};"));
+    assert!(code.contains("fn main()"));
+    assert!(code.contains("println!"));
+}
+
+#[test]
+fn c_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in C", "(C)");
+    assert!(code.contains("#include <stdlib.h>"));
+    assert!(code.contains("srand((unsigned) time(NULL));"));
+    assert!(code.contains("rand() % 100 + 1"));
+}
+
+#[test]
+fn cpp_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in C++", "polyglot CLI assembler (C++)");
+    assert!(code.contains("#include <random>"));
+    assert!(code.contains("std::mt19937"));
+    assert!(code.contains("std::uniform_int_distribution<> dist(1, 100);"));
+}
+
+#[test]
+fn csharp_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in C#", "(C#)");
+    assert!(code.contains("using System;"));
+    assert!(code.contains("new Random()"));
+    assert!(code.contains("Console.WriteLine(random.Next(1, 101));"));
+}
+
+#[test]
+fn go_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in Go", "(Go)");
+    assert!(code.contains("package main"));
+    assert!(code.contains("\"math/rand\""));
+    assert!(code.contains("fmt.Println(rand.Intn(100) + 1)"));
+}
+
+#[test]
+fn sql_random_synthesis() {
+    let code = code_with_banner("Write a random number generator in SQL", "(SQL)");
+    assert!(code.starts_with("-- assembled"));
+    assert!(code.contains("SELECT (abs(random()) % 100) + 1"));
+}
+
+#[test]
+fn assembly_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in assembly", "x86-64 NASM");
+    assert!(code.contains("global _start"));
+    assert!(code.contains("rdtsc"));
+    assert!(code.contains("syscall"));
+}
+
+#[test]
+fn javascript_random_cli_synthesis() {
+    let code = code_with_banner("Make a random number generator in JavaScript", "Node.js");
+    assert!(code.contains("console.log(Math.floor(Math.random() * 100) + 1);"));
+}
+
+#[test]
+fn explicit_language_suppresses_python_answer() {
+    // An explicit Rust request must not also assemble the Python CLI
+    // program — the Python assembler is guarded on target_language.
+    for code in assembled_codes("Make a random number generator in Rust") {
+        assert!(
+            !code.starts_with("# assembled by the DSCE generic CLI assembler"),
+            "Python program leaked into a Rust request"
+        );
+    }
+}
+
+#[test]
+fn python_stays_the_default_language() {
+    // No language named: the classic Python path still answers, alone.
+    let result = synthesize("Make a random number generator");
+    assert_eq!(result.answers.len(), 1);
+    // Explicitly named Python routes to the same single program.
+    let code = code_with_banner("Make a random number generator in Python", "generic CLI assembler");
+    assert!(code.contains("import random"));
+}
+
+#[test]
+fn dockerfile_synthesis() {
+    let code = code_with_banner("Containerize the service with Docker", "(Dockerfile)");
+    assert!(code.contains("FROM python:3.12-slim"));
+    assert!(code.contains("CMD [\"python\", \"main.py\"]"));
+}
+
+#[test]
+fn kubernetes_manifest_synthesis() {
+    let code = code_with_banner("Deploy the service with Kubernetes", "(Kubernetes)");
+    assert!(code.contains("apiVersion: apps/v1"));
+    assert!(code.contains("kind: Deployment"));
+    assert!(code.contains("containerPort: 8080"));
+}
+
+#[test]
+fn pytorch_framework_synthesis_with_install_step() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let harvest = harvest_offline("Make a PyTorch tensor multiplication script");
+    let result = engine.ask_with_facts(&harvest.goal, &harvest.triples);
+    let app = t(&harvest.app);
+    let code = result
+        .answers
+        .iter()
+        .find_map(|a| match a.bindings.get("?code") {
+            Some(Term::Str(c)) if c.contains("import torch") => Some(c.clone()),
+            _ => None,
+        })
+        .expect("PyTorch script was not assembled");
+    assert!(code.contains("torch.matmul"));
+    // Dependency reasoning: install channel and Python runtime dependency.
+    assert!(result
+        .derivations
+        .contains_key(&(app.clone(), t("install_step"), t("pip install torch"))));
+    assert!(result
+        .derivations
+        .contains_key(&(app, t("requires_dependency"), t("python_runtime"))));
+}
+
+#[test]
+fn electron_dependencies_resolve_transitively() {
+    // Electron depends on Node.js and Chromium; Node.js depends on V8 and
+    // libuv. The dependency closure must surface all four.
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let harvest = harvest_offline("Make an Electron desktop app");
+    let result = engine.ask_with_facts(&harvest.goal, &harvest.triples);
+    let app = t(&harvest.app);
+    for dep in ["node_js", "chromium", "v8_engine", "libuv"] {
+        assert!(
+            result
+                .derivations
+                .contains_key(&(app.clone(), t("requires_dependency"), t(dep))),
+            "missing transitive dependency {dep}"
+        );
+    }
+    let codes: Vec<String> = result
+        .answers
+        .iter()
+        .filter_map(|a| match a.bindings.get("?code") {
+            Some(Term::Str(c)) => Some(c.clone()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        codes.iter().any(|c| c.contains("BrowserWindow")),
+        "Electron main-process script was not assembled"
+    );
+}
+
+#[test]
+fn faiss_vector_search_synthesis() {
+    let code = code_with_banner("Build a FAISS vector search program", "(FAISS)");
+    assert!(code.contains("faiss.IndexFlatL2"));
+    assert!(code.contains("index.search"));
 }
 
 #[test]

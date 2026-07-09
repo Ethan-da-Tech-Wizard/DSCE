@@ -1,0 +1,18 @@
+{
+  "id": "rust_std_library",
+  "concept": "Rust standard library documentation: std::time for entropy, println! for output. Dependency-free Rust programs.",
+  "confidence": 1.0,
+  "evidence": [
+    "The Rust Standard Library documentation (doc.rust-lang.org/std) — std::time::SystemTime, macro std::println",
+    "Knuth, The Art of Computer Programming Vol. 2 — linear congruential generator constants (MMIX)"
+  ],
+  "facts": [
+    ["rust_std", "is_a", "language_library"],
+    ["rust_std", "implements_language", "lang_rust"],
+    ["lang_rust", "file_extension", "rs"],
+    ["lang_rust", "build_command", "rustc main.rs -o main"],
+    ["lang_rust", "run_command", "./main"],
+    ["rust_std", "code_banner", "// assembled by the DSCE polyglot CLI assembler (Rust)\n"],
+    ["rust_std", "code_random_cli", "use std::time::{SystemTime, UNIX_EPOCH};\n\nfn main() {\n    let seed = SystemTime::now()\n        .duration_since(UNIX_EPOCH)\n        .expect(\"system clock before 1970\")\n        .subsec_nanos() as u64;\n    // One linear congruential step (Knuth MMIX constants).\n    let mixed = seed\n        .wrapping_mul(6364136223846793005)\n        .wrapping_add(1442695040888963407);\n    println!(\"{}\", mixed % 100 + 1);\n}\n"]
+  ]
+}

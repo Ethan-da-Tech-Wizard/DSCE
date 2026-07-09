@@ -1,0 +1,18 @@
+{
+  "id": "electron_framework",
+  "concept": "Electron desktop framework: BrowserWindow main-process API, Node.js and Chromium dependencies.",
+  "confidence": 1.0,
+  "evidence": [
+    "Electron documentation (electronjs.org/docs) — app.whenReady, BrowserWindow, loadFile",
+    "Electron process model documentation — embedded Chromium and Node.js"
+  ],
+  "facts": [
+    ["electron", "is_a", "framework"],
+    ["electron", "provides", "desktop_web"],
+    ["electron", "depends_on", "node_js"],
+    ["electron", "depends_on", "chromium"],
+    ["electron", "install_command", "npm install electron"],
+    ["electron", "code_banner", "// assembled by the DSCE framework assembler (Electron)\n"],
+    ["electron", "code_snippet", "const { app, BrowserWindow } = require('electron');\n\napp.whenReady().then(() => {\n  const win = new BrowserWindow({ width: 800, height: 600 });\n  win.loadFile('index.html');\n});\n"]
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "go_std_library",
+  "concept": "Go standard library documentation: fmt, math/rand (auto-seeded since Go 1.20).",
+  "confidence": 1.0,
+  "evidence": [
+    "Go standard library documentation (pkg.go.dev) — math/rand Intn, fmt Println; Go 1.20 release notes (automatic global seeding)"
+  ],
+  "facts": [
+    ["go_std", "is_a", "language_library"],
+    ["go_std", "implements_language", "lang_go"],
+    ["lang_go", "file_extension", "go"],
+    ["lang_go", "build_command", "go build main.go"],
+    ["lang_go", "run_command", "go run main.go"],
+    ["go_std", "code_banner", "// assembled by the DSCE polyglot CLI assembler (Go)\n"],
+    ["go_std", "code_random_cli", "package main\n\nimport (\n\t\"fmt\"\n\t\"math/rand\"\n)\n\nfunc main() {\n\tfmt.Println(rand.Intn(100) + 1)\n}\n"]
+  ]
+}

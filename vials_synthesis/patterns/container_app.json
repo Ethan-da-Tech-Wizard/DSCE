@@ -1,0 +1,31 @@
+{
+  "id": "container_app",
+  "concept": "Deployment assembler: containerization requests bind to the tool providing a Dockerfile; orchestration requests bind to the tool providing a Deployment manifest.",
+  "rules": [
+    {
+      "name": "assemble-dockerfile",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "containerization"],
+        ["?tool", "provides", "containerization"],
+        ["?tool", "code_banner", "?banner"],
+        ["?tool", "code_dockerfile", "?dockerfile"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?dockerfile"
+    },
+    {
+      "name": "assemble-orchestration-manifest",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "orchestration"],
+        ["?tool", "provides", "orchestration"],
+        ["?tool", "code_banner", "?banner"],
+        ["?tool", "code_manifest", "?manifest"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?manifest"
+    }
+  ],
+  "evidence": ["Container build and orchestration deployment descriptors, per official Docker and Kubernetes references"]
+}

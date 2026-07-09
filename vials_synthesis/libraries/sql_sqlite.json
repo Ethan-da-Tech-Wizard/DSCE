@@ -1,0 +1,16 @@
+{
+  "id": "sql_sqlite_library",
+  "concept": "SQL as a synthesis target: SQLite core scalar functions (random, abs).",
+  "confidence": 1.0,
+  "evidence": [
+    "SQLite documentation (sqlite.org/lang_corefunc.html) — random(), abs(); ISO/IEC 9075 (SQL standard) SELECT syntax"
+  ],
+  "facts": [
+    ["sql_sqlite", "is_a", "language_library"],
+    ["sql_sqlite", "implements_language", "lang_sql"],
+    ["lang_sql", "file_extension", "sql"],
+    ["lang_sql", "run_command", "sqlite3 :memory: < main.sql"],
+    ["sql_sqlite", "code_banner", "-- assembled by the DSCE polyglot CLI assembler (SQL)\n"],
+    ["sql_sqlite", "code_random_cli", "SELECT (abs(random()) % 100) + 1 AS random_number;\n"]
+  ]
+}

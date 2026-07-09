@@ -1,0 +1,16 @@
+{
+  "id": "kubernetes_orchestration",
+  "concept": "Kubernetes container orchestration: apps/v1 Deployment manifest schema, container runtime dependency.",
+  "confidence": 1.0,
+  "evidence": [
+    "Kubernetes documentation (kubernetes.io/docs) — Deployment (apps/v1) workload resource, selectors, pod templates",
+    "Kubernetes container runtimes documentation — CRI-compatible runtime requirement"
+  ],
+  "facts": [
+    ["kubernetes", "is_a", "framework"],
+    ["kubernetes", "provides", "orchestration"],
+    ["kubernetes", "depends_on", "container_runtime"],
+    ["kubernetes", "code_banner", "# assembled by the DSCE orchestration assembler (Kubernetes)\n"],
+    ["kubernetes", "code_manifest", "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-deployment\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: app\n  template:\n    metadata:\n      labels:\n        app: app\n    spec:\n      containers:\n      - name: app\n        image: app:latest\n        ports:\n        - containerPort: 8080\n"]
+  ]
+}

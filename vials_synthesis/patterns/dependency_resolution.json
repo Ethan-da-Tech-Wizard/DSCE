@@ -1,0 +1,32 @@
+{
+  "id": "dependency_resolution",
+  "concept": "Dependency closure: everything a bound framework depends_on (transitively) becomes a requires_dependency fact for the app, and documented install_command facts become install_step facts. Pure Datalog over the framework vials' dependency graphs.",
+  "rules": [
+    {
+      "name": "direct-dependency",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "uses_framework", "?fw"],
+        ["?fw", "depends_on", "?dep"]
+      ],
+      "conclusion": ["?app", "requires_dependency", "?dep"]
+    },
+    {
+      "name": "transitive-dependency",
+      "premises": [
+        ["?app", "requires_dependency", "?dep"],
+        ["?dep", "depends_on", "?sub"]
+      ],
+      "conclusion": ["?app", "requires_dependency", "?sub"]
+    },
+    {
+      "name": "framework-install-step",
+      "premises": [
+        ["?app", "uses_framework", "?fw"],
+        ["?fw", "install_command", "?cmd"]
+      ],
+      "conclusion": ["?app", "install_step", "?cmd"]
+    }
+  ],
+  "evidence": ["Package dependency resolution: standard transitive-closure reasoning"]
+}
