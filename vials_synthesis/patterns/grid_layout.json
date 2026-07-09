@@ -31,7 +31,7 @@
         ["?app", "needs", "grid_layout"],
         ["grid_layout", "code_cells", "?cells"],
         ["?app", "uses", "?lib"],
-        ["?lib", "is_a", "graphics_library"],
+        ["?lib", "is_a", "python_graphics_library"],
         ["?lib", "code_grid_render", "?render"]
       ],
       "conclusion": ["?app", "code_view_body", "?body"],

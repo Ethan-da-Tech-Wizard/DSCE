@@ -109,7 +109,7 @@ fn matches_any(tokens: &[String], keywords: &[&str]) -> bool {
 pub fn harvest_offline(request: &str) -> Harvest {
     let tokens: Vec<String> = request
         .to_lowercase()
-        .split(|c: char| !c.is_alphanumeric())
+        .split(|c: char| !c.is_alphanumeric() && c != '+')
         .filter(|t| !t.is_empty())
         .map(String::from)
         .collect();
@@ -142,6 +142,9 @@ pub fn harvest_offline(request: &str) -> Harvest {
     };
 
     // Capability keywords. Checked in a fixed order — determinism again.
+    if matches_any(&tokens, &["c++", "cpp", "cplusplus", "qt"]) {
+        push(needs("cpp_graphics"), &mut triples);
+    }
     if matches_any(&tokens, &["random", "rand", "generator"]) {
         push(needs("random_generation"), &mut triples);
     }

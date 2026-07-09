@@ -14,7 +14,8 @@
       "name": "bind-gui-random-graphics",
       "premises": [
         ["?app", "needs", "graphics"],
-        ["?lib", "provides", "graphics"]
+        ["?lib", "provides", "graphics"],
+        ["?lib", "is_a", "python_graphics_library"]
       ],
       "conclusion": ["?app", "uses_graphics", "?lib"]
     },

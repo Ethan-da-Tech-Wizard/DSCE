@@ -29,11 +29,13 @@ fn synthesis_kb_loads_completely() {
         ids,
         vec![
             "cli_app",
+            "cpp_gui_app",
             "finite_state_machine",
             "grid_layout",
             "gui_random_app",
             "mvc",
             "pygame_graphics",
+            "qt_cpp_graphics",
             "random_generator",
             "sqlite_databases",
             "tkinter_graphics",
@@ -167,4 +169,22 @@ fn random_number_generator_synthesis() {
     assert!(code.starts_with("# assembled by the DSCE generic CLI assembler"));
     assert!(code.contains("import random"));
     assert!(code.contains("print(random.randint(1, 100))"));
+}
+
+#[test]
+fn cpp_gui_app_synthesis() {
+    let result = synthesize("Make a random number generator in C++ with a GUI");
+    assert!(result.answers.len() >= 1, "expected at least one answer");
+    let mut cpp_found = false;
+    for answer in &result.answers {
+        if let Some(Term::Str(code)) = answer.bindings.get("?code") {
+            if code.starts_with("// assembled by the DSCE C++ GUI assembler") {
+                assert!(code.contains("#include <QApplication>"));
+                assert!(code.contains("QApplication app(argc, argv);"));
+                assert!(code.contains("QObject::connect"));
+                cpp_found = true;
+            }
+        }
+    }
+    assert!(cpp_found, "C++ GUI program was not assembled by the engine");
 }

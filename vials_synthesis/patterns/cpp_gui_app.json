@@ -1,0 +1,28 @@
+{
+  "id": "cpp_gui_app",
+  "concept": "Generic C++ GUI application layout pattern",
+  "rules": [
+    {
+      "name": "bind-cpp-graphics",
+      "premises": [
+        ["?app", "needs", "cpp_graphics"],
+        ["?lib", "provides", "cpp_graphics"]
+      ],
+      "conclusion": ["?app", "uses_cpp_graphics", "?lib"]
+    },
+    {
+      "name": "assemble-cpp-gui-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "uses_cpp_graphics", "?lib"],
+        ["?lib", "code_init", "?init"],
+        ["?lib", "code_widgets", "?widgets"],
+        ["?lib", "code_logic", "?logic"],
+        ["?lib", "code_loop", "?loop"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = '// assembled by the DSCE C++ GUI assembler\\n' + ?init + ?widgets + ?logic + ?loop"
+    }
+  ],
+  "evidence": ["C++ desktop application templates"]
+}

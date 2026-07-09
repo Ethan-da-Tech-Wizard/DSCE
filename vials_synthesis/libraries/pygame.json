@@ -2,7 +2,7 @@
   "id": "pygame_graphics",
   "concept": "Pygame graphics library: screen initialization, surface rendering, event polling, and color tables. Pure API data — no rules, no references to any other library; the pattern vials bind to it through 'provides' and 'is_a graphics_library'.",
   "facts": [
-    ["pygame", "is_a", "graphics_library"],
+    ["pygame", "is_a", "python_graphics_library"],
     ["pygame", "provides", "graphics"],
 
     ["pygame", "function", "pygame.init"],

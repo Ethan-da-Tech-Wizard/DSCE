@@ -4,7 +4,7 @@
   "confidence": 1.0,
   "evidence": ["Python standard library Tkinter documentation"],
   "facts": [
-    ["tkinter", "is_a", "graphics_library"],
+    ["tkinter", "is_a", "python_graphics_library"],
     ["tkinter", "provides", "graphics"],
     
     ["tkinter", "code_text_render", "import tkinter as tk\nimport random\nroot = tk.Tk()\nroot.title('GUI Random Generator')\nroot.geometry('300x200')\nlabel = tk.Label(root, text='Press SPACE', font=('Arial', 24))\nlabel.pack(pady=50)\n"],
