@@ -11,6 +11,14 @@
       "conclusion": ["?app", "uses_cpp_graphics", "?lib"]
     },
     {
+      "name": "bind-cpp-model",
+      "premises": [
+        ["?app", "needs", "dictionary_model"],
+        ["?lib", "provides", "dictionary_model"]
+      ],
+      "conclusion": ["?app", "uses_cpp_model", "?lib"]
+    },
+    {
       "name": "assemble-cpp-gui-app",
       "premises": [
         ["?app", "is_a", "application"],
@@ -22,6 +30,21 @@
       ],
       "conclusion": ["?app", "code", "?code"],
       "compute": "?code = '// assembled by the DSCE C++ GUI assembler\\n' + ?init + ?widgets + ?logic + ?loop"
+    },
+    {
+      "name": "assemble-cpp-search-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "uses_cpp_graphics", "?gfx_lib"],
+        ["?app", "uses_cpp_model", "?model_lib"],
+        ["?gfx_lib", "code_init", "?init"],
+        ["?model_lib", "code_dict_data", "?dict"],
+        ["?gfx_lib", "code_search_widgets", "?widgets"],
+        ["?gfx_lib", "code_search_logic", "?logic"],
+        ["?gfx_lib", "code_loop", "?loop"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = '// assembled by the DSCE C++ GUI dictionary assembler\\n' + ?init + ?dict + ?widgets + ?logic + ?loop"
     }
   ],
   "evidence": ["C++ desktop application templates"]

@@ -1,0 +1,12 @@
+{
+  "id": "cpp_std_library",
+  "concept": "C++ standard library data structures (std::map, etc.) documentation",
+  "confidence": 1.0,
+  "evidence": ["C++ Standard Library reference"],
+  "facts": [
+    ["cpp_std", "is_a", "data_library"],
+    ["cpp_std", "provides", "dictionary_model"],
+
+    ["cpp_std", "code_dict_data", "#include <map>\n#include <string>\n    std::map<std::string, std::string> dict = {\n        {\"apple\", \"A round red or green edible pome fruit.\"},\n        {\"banana\", \"A long curved fruit which grows in clusters and has soft pulpy flesh and yellow skin.\"},\n        {\"cherry\", \"A small, round, red or black stone fruit.\"}\n    };\n"]
+  ]
+}
