@@ -1,0 +1,18 @@
+{
+  "id": "fastapi_framework",
+  "concept": "FastAPI web framework: async API, uvicorn, pydantic, and python dependencies.",
+  "confidence": 1.0,
+  "evidence": [
+    "FastAPI documentation (fastapi.tiangolo.com) — FastAPI app, route decorators, and JSON return values",
+    "Uvicorn documentation (uvicorn.org) — ASGI server runner"
+  ],
+  "facts": [
+    ["fastapi", "is_a", "framework"],
+    ["fastapi", "provides", "fastapi_api"],
+    ["fastapi", "depends_on", "uvicorn"],
+    ["fastapi", "depends_on", "python"],
+    ["fastapi", "install_command", "pip install fastapi uvicorn"],
+    ["fastapi", "code_banner", "# assembled by the DSCE framework assembler (FastAPI)\n"],
+    ["fastapi", "code_snippet", "from fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get('/')\ndef read_root():\n    return {'Hello': 'World'}\n"]
+  ]
+}
