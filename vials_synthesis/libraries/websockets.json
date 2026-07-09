@@ -1,0 +1,26 @@
+{
+  "id": "websockets_networking",
+  "concept": "WebSockets networking library: server connection, event listeners, packet sending, and connection closure. Pure API data — no rules, no references to any other library; the pattern vials bind to it through 'provides' and 'is_a networking_library'.",
+  "facts": [
+    ["websockets", "is_a", "networking_library"],
+    ["websockets", "provides", "networking"],
+
+    ["websockets", "function", "websockets.serve"],
+    ["websockets.serve", "param", "handler"],
+    ["websockets.serve", "param", "host"],
+    ["websockets.serve", "param", "port"],
+    ["websockets.serve", "returns", "Server"],
+    ["websockets", "function", "ws.send"],
+    ["ws.send", "param", "packet"],
+    ["ws.send", "returns", "None"],
+    ["websockets", "function", "ws.recv"],
+    ["ws.recv", "returns", "packet"],
+    ["websockets", "function", "ws.close"],
+    ["ws.close", "returns", "None"],
+
+    ["websockets", "code_listen", "import asyncio, websockets\nasync def handler(ws):\n    async for packet in ws:\n        await ws.send(packet)\n"],
+    ["websockets", "code_serve", "async def serve_forever():\n    async with websockets.serve(handler, 'localhost', 8765):\n        await asyncio.Future()\n"]
+  ],
+  "evidence": ["websockets library documentation, https://websockets.readthedocs.io"],
+  "confidence": 0.98
+}

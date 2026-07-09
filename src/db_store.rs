@@ -336,7 +336,7 @@ fn term_to_json(term: &Term) -> Value {
     }
 }
 
-fn term_from_json(value: &Value) -> StoreResult<Term> {
+pub(crate) fn term_from_json(value: &Value) -> StoreResult<Term> {
     match value {
         Value::String(s) => Ok(Term::str(s.clone())),
         Value::Bool(b) => Ok(Term::Bool(*b)),
@@ -353,7 +353,7 @@ fn term_from_json(value: &Value) -> StoreResult<Term> {
     }
 }
 
-fn triple_from_json(value: &Value) -> StoreResult<(Term, Term, Term)> {
+pub(crate) fn triple_from_json(value: &Value) -> StoreResult<(Term, Term, Term)> {
     let items = value
         .as_array()
         .filter(|a| a.len() == 3)
