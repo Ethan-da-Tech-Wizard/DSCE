@@ -32,7 +32,10 @@
 
     ["pygame", "code_init", "import pygame\npygame.init()\nscreen = pygame.display.set_mode((640, 480))\nclock = pygame.time.Clock()\n"],
     ["pygame", "code_grid_render", "def draw_grid(screen, grid, cell=32):\n    for y, row in enumerate(grid):\n        for x, val in enumerate(row):\n            color = (40, 200, 90) if val else (0, 0, 0)\n            pygame.draw.rect(screen, color, (x * cell, y * cell, cell - 1, cell - 1))\n    pygame.display.flip()\n"],
-    ["pygame", "code_events", "def poll_input(state):\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            state['running'] = False\n        elif event.type == pygame.KEYDOWN:\n            state['last_key'] = event.key\n"]
+    ["pygame", "code_events", "def poll_input(state):\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            state['running'] = False\n        elif event.type == pygame.KEYDOWN:\n            state['last_key'] = event.key\n"],
+    ["pygame", "code_text_render", "import pygame\nimport random\npygame.init()\npygame.font.init()\nscreen = pygame.display.set_mode((640, 480))\nfont = pygame.font.SysFont('Arial', 48)\ndef draw_text(screen, text):\n    screen.fill((30, 30, 40))\n    img = font.render(text, True, (0, 255, 255))\n    screen.blit(img, (150, 200))\n    pygame.display.flip()\n"],
+    ["pygame", "code_events_space", "def poll_input(state):\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            state['running'] = False\n        elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:\n            state['number'] = 'Num: ' + str(random.randint(1, 100))\n"],
+    ["pygame", "code_loop", "state = {'running': True, 'number': 'Press SPACE'}\ndef tick(state):\n    return state['running']\ndef main():\n    while tick(state):\n        poll_input(state)\n        draw_text(screen, state['number'])\n        pygame.time.Clock().tick(30)\nmain()\n"]
   ],
   "evidence": ["pygame 2.x documentation, https://pygame.org/docs"],
   "confidence": 0.99
