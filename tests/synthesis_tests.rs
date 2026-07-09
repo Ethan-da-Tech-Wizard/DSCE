@@ -31,6 +31,7 @@ fn synthesis_kb_loads_completely() {
             "cli_app",
             "cpp_gui_app",
             "cpp_std_library",
+            "english_dictionary",
             "finite_state_machine",
             "grid_layout",
             "gui_random_app",
