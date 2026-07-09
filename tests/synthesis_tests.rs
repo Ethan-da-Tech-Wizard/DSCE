@@ -38,7 +38,9 @@ fn synthesis_kb_loads_completely() {
             "docker_container",
             "electron_framework",
             "english_dictionary",
+            "express_framework",
             "faiss_vector_search",
+            "fastapi_framework",
             "finite_state_machine",
             "framework_app",
             "go_std_library",
@@ -471,4 +473,18 @@ fn polyglot_db_app_synthesis_sql() {
     let code = code_with_banner("Make a database app in SQL", "SQL");
     assert!(code.contains("CREATE TABLE users"));
     assert!(code.contains("INSERT INTO users"));
+}
+
+#[test]
+fn fastapi_framework_synthesis() {
+    let code = code_with_banner("Make a fastapi web server", "FastAPI");
+    assert!(code.contains("from fastapi import FastAPI"));
+    assert!(code.contains("FastAPI()"));
+}
+
+#[test]
+fn express_framework_synthesis() {
+    let code = code_with_banner("Make an express web server", "Express");
+    assert!(code.contains("require('express')"));
+    assert!(code.contains("app.listen"));
 }

@@ -1,0 +1,16 @@
+{
+  "id": "express_framework",
+  "concept": "Express web framework: router and middleware for Node.js.",
+  "confidence": 1.0,
+  "evidence": [
+    "Express documentation (expressjs.com) — router routing and middleware, app.listen"
+  ],
+  "facts": [
+    ["express", "is_a", "framework"],
+    ["express", "provides", "express_routing"],
+    ["express", "depends_on", "node_js"],
+    ["express", "install_command", "npm install express"],
+    ["express", "code_banner", "// assembled by the DSCE framework assembler (Express)\n"],
+    ["express", "code_snippet", "const express = require('express');\nconst app = express();\n\napp.get('/', (req, res) => {\n  res.send('Hello from Express!');\n});\n\napp.listen(8080, () => {\n  console.log('Serving on port 8080...');\n});\n"]
+  ]
+}

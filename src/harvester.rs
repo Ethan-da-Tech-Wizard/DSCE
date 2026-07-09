@@ -234,6 +234,12 @@ pub fn harvest_offline(request: &str) -> Harvest {
     if matches_any(&tokens, &["electron"]) {
         push(needs("desktop_web"), &mut triples);
     }
+    if matches_any(&tokens, &["fastapi"]) {
+        push(needs("fastapi_api"), &mut triples);
+    }
+    if matches_any(&tokens, &["express"]) {
+        push(needs("express_routing"), &mut triples);
+    }
     if matches_any(&tokens, &["docker", "dockerfile", "container", "containers", "containerize", "containerized"]) {
         push(needs("containerization"), &mut triples);
     }
