@@ -14,6 +14,8 @@ from __future__ import annotations
 import sys
 
 from dsce.demo_kb import build_engine
+from dsce.engine import Engine
+from dsce.db_store import SqliteVialStore
 
 
 def parse_term(token: str):
@@ -31,10 +33,27 @@ def parse_term(token: str):
 
 
 def main(argv: list) -> int:
-    engine = build_engine()
+    db_path = None
+    if argv and argv[0] == "--db":
+        if len(argv) < 2:
+            print("Error: --db flag requires a database path parameter.")
+            return 2
+        db_path = argv[1]
+        argv = argv[2:]
+
+    if db_path:
+        store = SqliteVialStore(db_path)
+        engine = Engine(store=store)
+    else:
+        engine = build_engine()
+
     if len(argv) == 3:
         goals = [tuple(parse_term(t) for t in argv)]
     elif not argv:
+        if db_path:
+            print("Error: When querying a database, you must specify a triple goal query, e.g.:")
+            print("  python -m dsce --db dsce.sqlite modesto located_in ?where")
+            return 2
         goals = [
             ("socrates", "is_mortal", "?answer"),
             ("courtyard", "area", "?a"),
@@ -42,7 +61,9 @@ def main(argv: list) -> int:
             ("?who", "is_a", "mammal"),
         ]
     else:
-        print(__doc__)
+        print("Run the DSCE demo or query a database:")
+        print("  python -m dsce  [subject predicate object]")
+        print("  python -m dsce --db <db_path> [subject predicate object]")
         return 2
 
     for i, goal in enumerate(goals):
@@ -54,3 +75,4 @@ def main(argv: list) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
