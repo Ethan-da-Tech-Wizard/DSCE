@@ -145,6 +145,9 @@ pub fn harvest_offline(request: &str) -> Harvest {
     if matches_any(&tokens, &["c++", "cpp", "cplusplus", "qt"]) {
         push(needs("cpp_graphics"), &mut triples);
     }
+    if matches_any(&tokens, &["dictionary", "dict", "lexicon", "search", "vocabulary"]) {
+        push(needs("dictionary_model"), &mut triples);
+    }
     if matches_any(&tokens, &["random", "rand", "generator"]) {
         push(needs("random_generation"), &mut triples);
     }

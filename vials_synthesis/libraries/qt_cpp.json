@@ -11,6 +11,8 @@
     ["qt_cpp", "code_init", "#include <QApplication>\n#include <QLabel>\n#include <QVBoxLayout>\n#include <QWidget>\n#include <QPushButton>\n#include <cstdlib>\n#include <ctime>\n\nint main(int argc, char *argv[]) {\n    QApplication app(argc, argv);\n    QWidget window;\n    window.setWindowTitle(\"C++ GUI Generator\");\n    window.resize(300, 200);\n    QVBoxLayout *layout = new QVBoxLayout(&window);\n"],
     ["qt_cpp", "code_widgets", "    QLabel *label = new QLabel(\"Press Click\", &window);\n    QPushButton *button = new QPushButton(\"Generate\", &window);\n    layout->addWidget(label);\n    layout->addWidget(button);\n"],
     ["qt_cpp", "code_logic", "    std::srand(std::time(nullptr));\n    QObject::connect(button, &QPushButton::clicked, [&]() {\n        label->setText(QString::number(std::rand() % 100 + 1));\n    });\n"],
+    ["qt_cpp", "code_search_widgets", "#include <QLineEdit>\n    QLineEdit *search_input = new QLineEdit(&window);\n    QPushButton *search_btn = new QPushButton(\"Search\", &window);\n    QLabel *result_label = new QLabel(\"Enter search term...\", &window);\n    layout->addWidget(search_input);\n    layout->addWidget(search_btn);\n    layout->addWidget(result_label);\n"],
+    ["qt_cpp", "code_search_logic", "    QObject::connect(search_btn, &QPushButton::clicked, [&]() {\n        QString term = search_input->text().toLower();\n        auto it = dict.find(term.toStdString());\n        if (it != dict.end()) {\n            result_label->setText(QString::fromStdString(it->second));\n        } else {\n            result_label->setText(\"Not found in dictionary!\");\n        }\n    });\n"],
     ["qt_cpp", "code_loop", "    window.show();\n    return app.exec();\n}\n"]
   ]
 }

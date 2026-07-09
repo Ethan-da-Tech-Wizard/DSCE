@@ -30,6 +30,7 @@ fn synthesis_kb_loads_completely() {
         vec![
             "cli_app",
             "cpp_gui_app",
+            "cpp_std_library",
             "finite_state_machine",
             "grid_layout",
             "gui_random_app",
@@ -187,4 +188,23 @@ fn cpp_gui_app_synthesis() {
         }
     }
     assert!(cpp_found, "C++ GUI program was not assembled by the engine");
+}
+
+#[test]
+fn cpp_dictionary_synthesis() {
+    let result = synthesize("Make a dictionary with a search function in C++");
+    assert!(result.answers.len() >= 1);
+    let mut dict_found = false;
+    for answer in &result.answers {
+        if let Some(Term::Str(code)) = answer.bindings.get("?code") {
+            if code.starts_with("// assembled by the DSCE C++ GUI dictionary assembler") {
+                assert!(code.contains("#include <map>"));
+                assert!(code.contains("#include <QLineEdit>"));
+                assert!(code.contains("std::map<std::string, std::string> dict"));
+                assert!(code.contains("QObject::connect"));
+                dict_found = true;
+            }
+        }
+    }
+    assert!(dict_found, "C++ GUI dictionary program was not assembled by the engine");
 }
