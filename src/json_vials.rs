@@ -147,7 +147,7 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     }
     engine.register_predicate("located_in", true);
     engine.register_predicate("height", true);
-    for annotation in ["function", "param", "returns", "color", "rgb"] {
+    for annotation in ["function", "param", "returns", "color", "rgb", "definition"] {
         engine.register_annotation(annotation);
     }
     Ok(engine)
