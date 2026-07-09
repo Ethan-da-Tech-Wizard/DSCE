@@ -16,6 +16,7 @@
     ["node_js", "code_banner", "// assembled by the DSCE polyglot assembler (JavaScript / Node.js)\n"],
     ["node_js", "code_random_cli", "console.log(Math.floor(Math.random() * 100) + 1);\n"],
     ["node_js", "code_gui_body", "console.log(\"+----------------------------+\");\nconsole.log(\"|     Node JS Terminal GUI   |\");\nconsole.log(\"+----------------------------+\");\nconsole.log(\"| Hello from JS GUI!         |\");\nconsole.log(\"+----------------------------+\");\n"],
-    ["node_js", "code_web_body", "const http = require('http');\nconst server = http.createServer((req, res) => {\n    res.writeHead(200, {'Content-Type': 'text/plain'});\n    res.end('Hello from JS Web Server!');\n});\nserver.listen(8080, '127.0.0.1', () => {\n    console.log('Serving on port 8080...');\n});\n"]
+    ["node_js", "code_web_body", "const http = require('http');\nconst server = http.createServer((req, res) => {\n    res.writeHead(200, {'Content-Type': 'text/plain'});\n    res.end('Hello from JS Web Server!');\n});\nserver.listen(8080, '127.0.0.1', () => {\n    console.log('Serving on port 8080...');\n});\n"],
+    ["node_js", "code_db_body", "const db = [\"Alice\"];\nconsole.log(\"JS Database users:\", db);\n"]
   ]
 }

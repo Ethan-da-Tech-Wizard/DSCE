@@ -13,6 +13,7 @@
     ["sql_sqlite", "code_banner", "-- assembled by the DSCE polyglot assembler (SQL)\n"],
     ["sql_sqlite", "code_random_cli", "SELECT (abs(random()) % 100) + 1 AS random_number;\n"],
     ["sql_sqlite", "code_gui_body", "SELECT 'Hello from SQL GUI!' AS gui_message;\n"],
-    ["sql_sqlite", "code_web_body", "SELECT json_object('status', 200, 'body', 'Hello from SQL Web!') AS http_response;\n"]
+    ["sql_sqlite", "code_web_body", "SELECT json_object('status', 200, 'body', 'Hello from SQL Web!') AS http_response;\n"],
+    ["sql_sqlite", "code_db_body", "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);\nINSERT INTO users (name) VALUES ('Alice');\nSELECT * FROM users;\n"]
   ]
 }

@@ -16,6 +16,7 @@
     ["x86_64_asm", "code_banner", "; assembled by the DSCE polyglot assembler (x86-64 NASM, Linux)\n"],
     ["x86_64_asm", "code_random_cli", "section .bss\nbuf: resb 4\n\nsection .text\nglobal _start\n_start:\n    rdtsc                       ; time-stamp counter -> EDX:EAX\n    xor edx, edx\n    mov ecx, 100\n    div ecx                     ; EDX = EAX mod 100\n    lea eax, [edx + 1]          ; 1..100\n    ; render EAX as decimal, newline-terminated, right-aligned in buf\n    lea rsi, [rel buf + 3]\n    mov byte [rsi], 10          ; newline\n    mov ebx, 10\n.digit:\n    dec rsi\n    xor edx, edx\n    div ebx\n    add dl, '0'\n    mov [rsi], dl\n    test eax, eax\n    jnz .digit\n    ; write(1, rsi, end - rsi)\n    lea rdx, [rel buf + 4]\n    sub rdx, rsi\n    mov rax, 1                  ; SYS_write\n    mov rdi, 1                  ; stdout\n    syscall\n    mov rax, 60                 ; SYS_exit\n    xor rdi, rdi\n    syscall\n"],
     ["x86_64_asm", "code_gui_body", "section .text\nglobal _start\n_start:\n    mov rax, 60                 ; SYS_exit\n    xor rdi, rdi\n    syscall\n"],
-    ["x86_64_asm", "code_web_body", "section .text\nglobal _start\n_start:\n    mov rax, 60                 ; SYS_exit\n    xor rdi, rdi\n    syscall\n"]
+    ["x86_64_asm", "code_web_body", "section .text\nglobal _start\n_start:\n    mov rax, 60                 ; SYS_exit\n    xor rdi, rdi\n    syscall\n"],
+    ["x86_64_asm", "code_db_body", "section .text\nglobal _start\n_start:\n    mov rax, 60                 ; SYS_exit\n    xor rdi, rdi\n    syscall\n"]
   ]
 }

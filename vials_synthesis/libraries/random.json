@@ -1,8 +1,8 @@
 {
   "id": "random_generator",
-  "concept": "Python random standard library documentation, including GUI and Web server capabilities.",
+  "concept": "Python random standard library documentation, including GUI, Web server, and Database capabilities.",
   "confidence": 1.0,
-  "evidence": ["Python standard library random, tkinter, and http.server module documentation"],
+  "evidence": ["Python standard library random, tkinter, http.server, and sqlite3 module documentation"],
   "facts": [
     ["random", "is_a", "generator_library"],
     ["random", "provides", "random_generation"],
@@ -14,6 +14,7 @@
     ["random", "code_random_cli", "import random\nprint(random.randint(1, 100))\n"],
     ["random", "code_gui_body", "import tkinter as tk\nroot = tk.Tk()\nroot.title(\"Python GUI App\")\nroot.geometry(\"300x200\")\nlabel = tk.Label(root, text=\"Hello from Python GUI!\", font=(\"Arial\", 16))\nlabel.pack(pady=50)\nroot.mainloop()\n"],
     ["random", "code_web_body", "from http.server import SimpleHTTPRequestHandler, HTTPServer\nclass Handler(SimpleHTTPRequestHandler):\n    def do_GET(self):\n        self.send_response(200)\n        self.send_header(\"Content-Type\", \"text/plain\")\n        self.end_headers()\n        self.wfile.write(b\"Hello from Python Web Server!\")\nserver = HTTPServer((\"127.0.0.1\", 8080), Handler)\nprint(\"Serving on port 8080...\")\nserver.serve_forever()\n"],
+    ["random", "code_db_body", "import sqlite3\nconn = sqlite3.connect(\":memory:\")\ncursor = conn.cursor()\ncursor.execute(\"CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)\")\ncursor.execute(\"INSERT INTO users (name) VALUES ('Alice')\")\nconn.commit()\nfor row in cursor.execute(\"SELECT * FROM users\"):\n    print(row)\nconn.close()\n"],
     ["random", "code_init", "import random\n"],
     ["random", "code_gen", "print(random.randint(1, 100))\n"]
   ]
