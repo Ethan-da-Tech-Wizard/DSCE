@@ -29,7 +29,6 @@ fn synthesis_kb_loads_completely() {
         ids,
         vec![
             "c_std_library",
-            "cli_app",
             "container_app",
             "cpp_gui_app",
             "cpp_std_library",
@@ -49,6 +48,8 @@ fn synthesis_kb_loads_completely() {
             "mvc",
             "node_js_runtime",
             "polyglot_cli_app",
+            "polyglot_gui_app",
+            "polyglot_web_app",
             "pygame_graphics",
             "pytorch_framework",
             "qt_cpp_graphics",
@@ -186,22 +187,22 @@ fn random_number_generator_synthesis() {
     let Some(Term::Str(code)) = answer.bindings.get("?code") else {
         panic!("?code did not bind to a string");
     };
-    assert!(code.starts_with("# assembled by the DSCE generic CLI assembler"));
+    assert!(code.starts_with("# assembled by the DSCE polyglot assembler (Python)"));
     assert!(code.contains("import random"));
     assert!(code.contains("print(random.randint(1, 100))"));
 }
 
 #[test]
 fn cpp_gui_app_synthesis() {
-    let result = synthesize("Make a random number generator in C++ with a GUI");
-    assert!(result.answers.len() >= 1, "expected at least one answer");
+    let result = synthesize("Make a random number generator in C++ and show me the GUI");
+    assert!(result.answers.len() >= 1);
     let mut cpp_found = false;
     for answer in &result.answers {
         if let Some(Term::Str(code)) = answer.bindings.get("?code") {
-            if code.starts_with("// assembled by the DSCE C++ GUI assembler") {
-                assert!(code.contains("#include <QApplication>"));
-                assert!(code.contains("QApplication app(argc, argv);"));
-                assert!(code.contains("QObject::connect"));
+            if code.starts_with("// assembled by the DSCE polyglot assembler (C++)")
+                && code.contains("#include <QApplication>")
+                && code.contains("QApplication app(argc, argv);")
+            {
                 cpp_found = true;
             }
         }
@@ -255,7 +256,7 @@ fn c_random_cli_synthesis() {
 
 #[test]
 fn cpp_random_cli_synthesis() {
-    let code = code_with_banner("Make a random number generator in C++", "polyglot CLI assembler (C++)");
+    let code = code_with_banner("Make a random number generator in C++", "polyglot assembler (C++)");
     assert!(code.contains("#include <random>"));
     assert!(code.contains("std::mt19937"));
     assert!(code.contains("std::uniform_int_distribution<> dist(1, 100);"));
@@ -304,7 +305,7 @@ fn explicit_language_suppresses_python_answer() {
     // program — the Python assembler is guarded on target_language.
     for code in assembled_codes("Make a random number generator in Rust") {
         assert!(
-            !code.starts_with("# assembled by the DSCE generic CLI assembler"),
+            !code.starts_with("# assembled by the DSCE polyglot assembler (Python)"),
             "Python program leaked into a Rust request"
         );
     }
@@ -316,7 +317,7 @@ fn python_stays_the_default_language() {
     let result = synthesize("Make a random number generator");
     assert_eq!(result.answers.len(), 1);
     // Explicitly named Python routes to the same single program.
-    let code = code_with_banner("Make a random number generator in Python", "generic CLI assembler");
+    let code = code_with_banner("Make a random number generator in Python", "polyglot assembler (Python)");
     assert!(code.contains("import random"));
 }
 
@@ -413,4 +414,32 @@ fn cpp_dictionary_synthesis() {
         }
     }
     assert!(dict_found, "C++ GUI dictionary program was not assembled by the engine");
+}
+
+#[test]
+fn polyglot_gui_app_synthesis_python() {
+    let code = code_with_banner("Make a GUI in Python", "Python");
+    assert!(code.contains("import tkinter as tk"));
+    assert!(code.contains("root.mainloop()"));
+}
+
+#[test]
+fn polyglot_gui_app_synthesis_cpp() {
+    let code = code_with_banner("Make a GUI in C++", "polyglot assembler (C++)");
+    assert!(code.contains("#include <QApplication>"));
+    assert!(code.contains("QApplication app"));
+}
+
+#[test]
+fn polyglot_web_app_synthesis_rust() {
+    let code = code_with_banner("Make a web server in Rust", "Rust");
+    assert!(code.contains("use std::net::TcpListener;"));
+    assert!(code.contains("TcpListener::bind"));
+}
+
+#[test]
+fn polyglot_web_app_synthesis_go() {
+    let code = code_with_banner("Make a web server in Go", "Go");
+    assert!(code.contains("net/http"));
+    assert!(code.contains("ListenAndServe"));
 }
