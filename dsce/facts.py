@@ -65,3 +65,36 @@ def sort_key(value) -> tuple:
     if isinstance(value, (int, float)):
         return (0, repr(value))
     return (1, str(value))
+
+
+def is_more_specific(term1: Term, term2: Term, wm: dict = None) -> bool:
+    """Returns True if term1 contains more specific context or detail than term2.
+    
+    Checks both lexical sub-string containment and taxonomic is_a path in wm.
+    """
+    if not isinstance(term1, str) or not isinstance(term2, str):
+        return False
+    if term1 == term2:
+        return False
+    
+    # 1. Lexical sub-string containment (e.g. "tower of pie in ajo arizona" contains "tower of pie")
+    if term2.lower() in term1.lower():
+        return True
+        
+    # 2. Taxonomic specialization (is_a paths in working memory)
+    if wm is not None:
+        visited = set()
+        queue = [term1]
+        while queue:
+            curr = queue.pop(0)
+            if curr in visited:
+                continue
+            visited.add(curr)
+            if curr == term2:
+                return True
+            for fact in wm:
+                if len(fact) == 3 and fact[0] == curr and fact[1] == "is_a":
+                    queue.append(fact[2])
+                    
+    return False
+

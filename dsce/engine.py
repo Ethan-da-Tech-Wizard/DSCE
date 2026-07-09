@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from dsce.facts import Bindings, Fact, Pattern, constants, sort_key, substitute, unify
+from dsce.facts import Bindings, Fact, Pattern, constants, sort_key, substitute, unify, is_more_specific
 from dsce.proof import Derivation, Proof, fact_str
 from dsce.sand import Grain
 from dsce.vial import Rule, Vial
@@ -48,6 +48,7 @@ class Result:
     dormant: tuple  # vial ids the flood never reached
     grains: int  # total sand grains emitted
     facts_derived: int  # size of working memory at fixpoint
+    conflicts: tuple = ()  # functional predicate conflict violations
 
     def summary(self) -> str:
         lines = [
@@ -58,19 +59,56 @@ class Result:
             f"activated vials: {', '.join(self.activated) if self.activated else '(none)'}",
             f"dormant vials:   {', '.join(self.dormant) if self.dormant else '(none)'}",
         ]
+        
+        if self.conflicts:
+            lines.append("\n!!! CONFLICT WARNING !!!")
+            for new_f, old_f in self.conflicts:
+                lines.append(f"Conflict detected for functional predicate '{new_f[1]}' on subject '{new_f[0]}':")
+                lines.append(f"  - {fact_str(new_f)}")
+                lines.append(f"  - {fact_str(old_f)}")
+            lines.append("")
+            
         if not self.answers:
             lines.append("no proof found.")
+            
         for i, answer in enumerate(self.answers, 1):
             lines.append(f"answer {i} (confidence {answer.confidence:.3f}):")
             lines.append(answer.proof.render())
+            
+            # Check if this answer contains more specific context than any other answer
+            specificity_notes = []
+            for j, other in enumerate(self.answers, 1):
+                if i != j:
+                    if is_more_specific(answer.fact[0], other.fact[0], answer.proof.derivations):
+                        specificity_notes.append(
+                            f"Answer {i} ('{answer.fact[0]}') contains more detailed/specific context than Answer {j} ('{other.fact[0]}')."
+                        )
+            if specificity_notes:
+                for note in specificity_notes:
+                    lines.append(f"  [Note] {note}")
+                    
         return "\n".join(lines)
 
 
 class Engine:
-    def __init__(self, max_ticks: int = 50):
+    def __init__(self, max_ticks: int = 50, store=None):
         self.max_ticks = max_ticks
         self.vials: dict = {}  # id -> Vial
         self._term_index: dict = {}  # term -> sorted tuple of vial ids
+        self.store = store
+        self.predicates: dict = {}  # predicate name -> properties
+
+    def register_predicate(self, name: str, functional: bool = False) -> None:
+        self.predicates[name] = {"functional": functional}
+
+    def _check_conflict(self, fact: Fact, wm: dict) -> Optional[tuple]:
+        subj, pred, obj = fact
+        if pred in self.predicates and self.predicates[pred].get("functional", False):
+            for existing_fact in wm:
+                e_subj, e_pred, e_obj = existing_fact
+                if e_subj == subj and e_pred == pred and e_obj != obj:
+                    return (fact, existing_fact)
+        return None
 
     def add_vial(self, vial: Vial) -> None:
         if vial.id in self.vials:
@@ -94,17 +132,31 @@ class Engine:
         grains: list = [Grain(term, "query", 0) for term in constants(goal)]
         total_grains = len(grains)
         ticks = 0
+        conflicts = []
+
+        def get_vials_for_term(term):
+            v_ids = list(index.get(term, ()))
+            if self.store is not None:
+                store_ids = self.store.get_vial_ids_for_term(term)
+                for v_id in store_ids:
+                    if v_id not in self.vials:
+                        self.vials[v_id] = self.store.load_vial(v_id)
+                    if v_id not in v_ids:
+                        v_ids.append(v_id)
+            return tuple(v_ids)
 
         for tick in range(1, self.max_ticks + 1):
             # Sand wakes dormant vials; firing vials wake their neighbors.
             newly_active = []
             for grain in grains:
-                for vial_id in index.get(grain.term, ()):
+                for vial_id in get_vials_for_term(grain.term):
                     if vial_id not in active:
                         active[vial_id] = None
                         newly_active.append(vial_id)
             for vial_id in list(newly_active):
                 for neighbor in self.vials[vial_id].neighbors:
+                    if self.store is not None and neighbor not in self.vials:
+                        self.vials[neighbor] = self.store.load_vial(neighbor)
                     if neighbor in self.vials and neighbor not in active:
                         active[neighbor] = None
                         newly_active.append(neighbor)
@@ -115,6 +167,9 @@ class Engine:
                 vial = self.vials[vial_id]
                 for fact in sorted(vial.facts, key=sort_key):
                     if fact not in wm:
+                        conflict = self._check_conflict(fact, wm)
+                        if conflict:
+                            conflicts.append(conflict)
                         wm[fact] = Derivation(
                             fact=fact,
                             vial_id=vial_id,
@@ -130,6 +185,9 @@ class Engine:
                     for bindings in self._match(rule.premises, wm):
                         fact, derivation = self._conclude(rule, vial, bindings, wm)
                         if fact is not None and fact not in wm:
+                            conflict = self._check_conflict(fact, wm)
+                            if conflict:
+                                conflicts.append(conflict)
                             wm[fact] = derivation
                             new_facts.append(fact)
 
@@ -161,6 +219,7 @@ class Engine:
             dormant=dormant,
             grains=total_grains,
             facts_derived=len(wm),
+            conflicts=tuple(conflicts),
         )
 
     def _match(self, premises: tuple, wm: dict):
