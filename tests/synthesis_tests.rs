@@ -31,10 +31,12 @@ fn synthesis_kb_loads_completely() {
             "cli_app",
             "finite_state_machine",
             "grid_layout",
+            "gui_random_app",
             "mvc",
             "pygame_graphics",
             "random_generator",
             "sqlite_databases",
+            "tkinter_graphics",
             "websockets_networking",
         ]
     );
