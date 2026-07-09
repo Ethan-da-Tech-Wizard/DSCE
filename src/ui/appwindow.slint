@@ -1,0 +1,314 @@
+import { Button, LineEdit, TextEdit, ComboBox, ScrollView } from "std-widgets.slint";
+
+export struct VialInfo {
+    id: string,
+    concept: string,
+    facts_count: int,
+    rules_count: int,
+    activated: bool,
+}
+
+export struct ProofLine {
+    text: string,
+    depth: int,
+    is_rule: bool,
+}
+
+export component AppWindow inherits Window {
+    title: "DSCE Studio - Offline Standalone GUI";
+    width: 1200px;
+    height: 800px;
+    background: #06060c;
+    default-font-family: "Outfit";
+
+    // Bindings exposed to Rust logic
+    in-out property <[VialInfo]> vials: [];
+    in-out property <string> assembled-code: "";
+    in-out property <[ProofLine]> proof-tree: [];
+    in-out property <string> console-output: "Sandbox output will stream here...";
+    in-out property <string> engine-status: "READY";
+    in-out property <string> active-vials-count: "0";
+    in-out property <string> selected-lang: "Auto-Detect";
+
+    callback synthesize(string);
+    callback run-sandbox(string, string);
+
+    HorizontalLayout {
+        padding: 16px;
+        spacing: 16px;
+
+        // 1. Sidebar Panel
+        Rectangle {
+            width: 280px;
+            background: #0c0c1c;
+            border-radius: 12px;
+            border-width: 1px;
+            border-color: rgba(255, 255, 255, 0.08);
+
+            VerticalLayout {
+                padding: 20px;
+                spacing: 16px;
+
+                // Logo/Title
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: start;
+                    Rectangle {
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 6px;
+                        background: @linear-gradient(135deg, #00ffff 0%, #bd00ff 100%);
+                    }
+                    Text {
+                        text: "DSCE Studio";
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: #ffffff;
+                    }
+                }
+
+                // Query Request Input
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "QUERY REQUEST";
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: #64748b;
+                    }
+                    prompt-input := TextEdit {
+                        text: "Make a random number generator in Go";
+                        font-size: 13px;
+                        preferred-height: 120px;
+                    }
+                }
+
+                // Dropdown Language Selector
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "TARGET LANGUAGE";
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: #64748b;
+                    }
+                    lang-combo := ComboBox {
+                        current-value: "Auto-Detect";
+                        model: ["Auto-Detect", "Python", "Go", "Rust", "C++", "C", "C#", "JavaScript", "SQL", "Assembly"];
+                        selected(val) => {
+                            selected-lang = val;
+                        }
+                    }
+                }
+
+                // Synthesize Button
+                synthesize-btn := Button {
+                    text: "Synthesize Code";
+                    preferred-height: 40px;
+                    clicked => {
+                        synthesize(prompt-input.text);
+                    }
+                }
+
+                // Empty rectangle acting as flexible spacer
+                Rectangle {
+                    background: transparent;
+                }
+
+                // Engine Status Display
+                Rectangle {
+                    height: 90px;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: rgba(255, 255, 255, 0.04);
+                    padding: 12px;
+
+                    VerticalLayout {
+                        spacing: 8px;
+                        HorizontalLayout {
+                            Text { text: "Engine Status:"; font-size: 12px; color: #94a3b8; }
+                            Text { 
+                                text: engine-status; 
+                                font-size: 12px; 
+                                font-weight: 700; 
+                                color: engine-status == "READY" ? #39ff14 : #00ffff; 
+                            }
+                        }
+                        HorizontalLayout {
+                            Text { text: "Vials Loaded:"; font-size: 12px; color: #94a3b8; }
+                            Text { text: active-vials-count; font-size: 12px; font-weight: 700; color: #ffffff; }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Main reasoning dashboard
+        HorizontalLayout {
+            spacing: 16px;
+            
+            // Left Content: Vials Activation Grid
+            Rectangle {
+                width: 380px;
+                background: rgba(12, 12, 28, 0.65);
+                border-radius: 12px;
+                border-width: 1px;
+                border-color: rgba(255, 255, 255, 0.08);
+
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text {
+                        text: "VIALS NETWORK STATUS";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #94a3b8;
+                    }
+
+                    ScrollView {
+                        VerticalLayout {
+                            spacing: 8px;
+                            for vial in vials: Rectangle {
+                                height: 50px;
+                                background: vial.activated ? rgba(0, 255, 255, 0.15) : rgba(255, 255, 255, 0.02);
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: vial.activated ? #00ffff : rgba(255, 255, 255, 0.04);
+                                padding: 8px;
+
+                                HorizontalLayout {
+                                    spacing: 10px;
+                                    VerticalLayout {
+                                        alignment: center;
+                                        Text {
+                                            text: vial.id;
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            color: vial.activated ? #00ffff : #ffffff;
+                                        }
+                                        Text {
+                                            text: vial.concept;
+                                            font-size: 10px;
+                                            color: #94a3b8;
+                                            overflow: elide;
+                                        }
+                                    }
+                                    Rectangle { background: transparent; }
+                                    Text {
+                                        text: "Facts: " + vial.facts-count;
+                                        font-size: 10px;
+                                        color: #64748b;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Right Content: Code Playground Tabs
+            Rectangle {
+                background: rgba(12, 12, 28, 0.65);
+                border-radius: 12px;
+                border-width: 1px;
+                border-color: rgba(255, 255, 255, 0.08);
+
+                tab-manager := VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    // Custom Tab Buttons
+                    tab-header := HorizontalLayout {
+                        spacing: 8px;
+                        height: 32px;
+                        
+                        property <int> active-tab: 0;
+
+                        t0 := Rectangle {
+                            background: active-tab == 0 ? rgba(0, 255, 255, 0.1) : transparent;
+                            border-radius: 6px;
+                            border-width: 1px;
+                            border-color: active-tab == 0 ? #00ffff : transparent;
+                            Text { text: "Assembled Code"; font-size: 12px; color: active-tab == 0 ? #00ffff : #94a3b8; horizontal-alignment: center; vertical-alignment: center; }
+                            TouchArea { clicked => { active-tab = 0; } }
+                        }
+                        t1 := Rectangle {
+                            background: active-tab == 1 ? rgba(0, 255, 255, 0.1) : transparent;
+                            border-radius: 6px;
+                            border-width: 1px;
+                            border-color: active-tab == 1 ? #00ffff : transparent;
+                            Text { text: "Datalog Proof"; font-size: 12px; color: active-tab == 1 ? #00ffff : #94a3b8; horizontal-alignment: center; vertical-alignment: center; }
+                            TouchArea { clicked => { active-tab = 1; } }
+                        }
+                        t2 := Rectangle {
+                            background: active-tab == 2 ? rgba(0, 255, 255, 0.1) : transparent;
+                            border-radius: 6px;
+                            border-width: 1px;
+                            border-color: active-tab == 2 ? #00ffff : transparent;
+                            Text { text: "Playground Run"; font-size: 12px; color: active-tab == 2 ? #00ffff : #94a3b8; horizontal-alignment: center; vertical-alignment: center; }
+                            TouchArea { clicked => { active-tab = 2; } }
+                        }
+                    }
+
+                    // Content switcher
+                    if tab-header.active-tab == 0 : ScrollView {
+                        Text {
+                            text: assembled-code;
+                            font-size: 12px;
+                            font-family: "Fira Code";
+                            color: #e2e8f0;
+                        }
+                    }
+
+                    if tab-header.active-tab == 1 : ScrollView {
+                        VerticalLayout {
+                            spacing: 4px;
+                            for line in proof-tree: Rectangle {
+                                height: 20px;
+                                HorizontalLayout {
+                                    padding-left: line.depth * 10px;
+                                    Text {
+                                        text: line.text;
+                                        font-size: 11px;
+                                        font-family: "Fira Code";
+                                        color: line.is-rule ? #bd00ff : #94a3b8;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if tab-header.active-tab == 2 : VerticalLayout {
+                        spacing: 8px;
+                        run-btn := Button {
+                            text: "Execute Sandbox Program";
+                            preferred-height: 36px;
+                            clicked => {
+                                run-sandbox(assembled-code, selected-lang);
+                            }
+                        }
+                        Rectangle {
+                            background: #020205;
+                            border-radius: 6px;
+                            border-width: 1px;
+                            border-color: rgba(255, 255, 255, 0.04);
+                            
+                            ScrollView {
+                                padding: 12px;
+                                Text {
+                                    text: console-output;
+                                    font-size: 11px;
+                                    font-family: "Fira Code";
+                                    color: #39ff14;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
