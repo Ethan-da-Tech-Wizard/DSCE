@@ -1,0 +1,28 @@
+{
+  "id": "polyglot_gui_app",
+  "concept": "Polyglot GUI app assembler: binds an app's target_language to whichever library vial implements it, and concatenates the language banner and the C++/Rust/Go/Python GUI code block.",
+  "rules": [
+    {
+      "name": "bind-gui-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_gui_language", "?lib"]
+    },
+    {
+      "name": "assemble-polyglot-gui-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "gui_graphics"],
+        ["?app", "uses_gui_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_gui_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    }
+  ],
+  "evidence": ["Language-agnostic GUI program assembly: capability/provider binding over target_language"]
+}

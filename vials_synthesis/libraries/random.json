@@ -1,11 +1,19 @@
 {
   "id": "random_generator",
-  "concept": "Python random standard library documentation",
+  "concept": "Python random standard library documentation, including GUI and Web server capabilities.",
   "confidence": 1.0,
-  "evidence": ["Python standard library random module documentation"],
+  "evidence": ["Python standard library random, tkinter, and http.server module documentation"],
   "facts": [
     ["random", "is_a", "generator_library"],
     ["random", "provides", "random_generation"],
+    ["random", "implements_language", "lang_python"],
+    ["lang_python", "file_extension", "py"],
+    ["lang_python", "build_command", "python3 -m py_compile main.py"],
+    ["lang_python", "run_command", "python3 main.py"],
+    ["random", "code_banner", "# assembled by the DSCE polyglot assembler (Python)\n"],
+    ["random", "code_random_cli", "import random\nprint(random.randint(1, 100))\n"],
+    ["random", "code_gui_body", "import tkinter as tk\nroot = tk.Tk()\nroot.title(\"Python GUI App\")\nroot.geometry(\"300x200\")\nlabel = tk.Label(root, text=\"Hello from Python GUI!\", font=(\"Arial\", 16))\nlabel.pack(pady=50)\nroot.mainloop()\n"],
+    ["random", "code_web_body", "from http.server import SimpleHTTPRequestHandler, HTTPServer\nclass Handler(SimpleHTTPRequestHandler):\n    def do_GET(self):\n        self.send_response(200)\n        self.send_header(\"Content-Type\", \"text/plain\")\n        self.end_headers()\n        self.wfile.write(b\"Hello from Python Web Server!\")\nserver = HTTPServer((\"127.0.0.1\", 8080), Handler)\nprint(\"Serving on port 8080...\")\nserver.serve_forever()\n"],
     ["random", "code_init", "import random\n"],
     ["random", "code_gen", "print(random.randint(1, 100))\n"]
   ]

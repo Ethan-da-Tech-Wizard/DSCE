@@ -183,6 +183,15 @@ pub fn harvest_offline(request: &str) -> Harvest {
     if matches_any(&tokens, &["game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation", "gui", "tkinter", "pygame"]) {
         push(needs("graphics"), &mut triples);
     }
+    if matches_any(&tokens, &["gui", "window", "visual"]) {
+        push(needs("gui_graphics"), &mut triples);
+    }
+    if matches_any(&tokens, &["web", "server", "api", "http"]) {
+        push(needs("web_server"), &mut triples);
+    }
+    if matches_any(&tokens, &["database", "db", "sql"]) {
+        push(needs("db_connector"), &mut triples);
+    }
     if matches_any(&tokens, &["multiplayer", "online", "network", "networked", "server", "websocket", "websockets"]) {
         push(needs("networking"), &mut triples);
     }
