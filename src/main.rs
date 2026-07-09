@@ -12,6 +12,12 @@
 //!
 //! # Seed a SQLite database with the demo knowledge base
 //! cargo run -- --db dsce.sqlite --seed
+//!
+//! # Load a JSON vial directory and ask a raw triple against it
+//! cargo run -- --vials vials_synthesis my_app needs "?what"
+//!
+//! # Assemble software from a natural-language request (Semantic Harvester)
+//! cargo run -- --synthesize "Make a multiplayer grid game with a scoring system"
 //! ```
 
 use std::process::ExitCode;
@@ -20,6 +26,9 @@ use dsce::db_store::SqliteVialStore;
 use dsce::demo_kb::{build_engine, demo_vials};
 use dsce::engine::Engine;
 use dsce::facts::{Pattern, Term};
+use dsce::harvester::harvest_offline;
+use dsce::json_vials::engine_from_dir;
+use dsce::proof::fact_str;
 
 /// Interpret one command-line token as a triple term.
 ///
@@ -42,27 +51,108 @@ fn parse_term(token: &str) -> Term {
 }
 
 fn usage() -> ExitCode {
-    eprintln!("Run the DSCE demo or query a database:");
+    eprintln!("Run the DSCE demo, query a knowledge base, or assemble software:");
     eprintln!("  dsce  [subject predicate object]");
     eprintln!("  dsce --db <db_path> subject predicate object");
     eprintln!("  dsce --db <db_path> --seed        (write the demo KB into the database)");
+    eprintln!("  dsce --vials <dir> subject predicate object");
+    eprintln!("  dsce --synthesize \"<request>\" [--vials <dir>]");
     ExitCode::from(2)
 }
 
+/// The Semantic Harvester flow: request -> goal + vocabulary triples ->
+/// flood -> assembled program(s).
+fn synthesize(request: &str, vials_dir: &str) -> ExitCode {
+    let mut engine = match engine_from_dir(vials_dir) {
+        Ok(engine) => engine,
+        Err(e) => {
+            eprintln!("Error loading vials from {vials_dir:?}: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let harvest = harvest_offline(request);
+    println!("request: {request:?}");
+    println!("harvested goal: {}", fact_str(&harvest.goal));
+    println!("harvested vocabulary:");
+    for triple in &harvest.triples {
+        println!("  {}", fact_str(triple));
+    }
+    println!();
+
+    let result = engine.ask_with_facts(&harvest.goal, &harvest.triples);
+    println!("{}", result.summary());
+
+    for (i, answer) in result.answers.iter().enumerate() {
+        if let Some(Term::Str(code)) = answer.bindings.get("?code") {
+            println!("\n--- assembled program #{} (confidence {:.3}) ---", i + 1, answer.confidence);
+            println!("{code}");
+        }
+    }
+    if result.answers.is_empty() {
+        eprintln!("\nThe request did not harvest enough capabilities to assemble a full program.");
+        eprintln!("Partial derivations are listed in the flood summary above.");
+    }
+    ExitCode::SUCCESS
+}
+
 fn main() -> ExitCode {
-    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    let args: Vec<String> = std::env::args().skip(1).collect();
 
     let mut db_path: Option<String> = None;
-    if args.first().map(String::as_str) == Some("--db") {
-        if args.len() < 2 {
-            eprintln!("Error: --db flag requires a database path parameter.");
-            return ExitCode::from(2);
+    let mut vials_dir: Option<String> = None;
+    let mut synth_request: Option<String> = None;
+    let mut seed = false;
+    let mut positional: Vec<String> = Vec::new();
+
+    let mut i = 0;
+    while i < args.len() {
+        let take_value = |i: usize, flag: &str| -> Option<String> {
+            args.get(i + 1)
+                .cloned()
+                .or_else(|| {
+                    eprintln!("Error: {flag} requires a value.");
+                    None
+                })
+        };
+        match args[i].as_str() {
+            "--db" => match take_value(i, "--db") {
+                Some(v) => {
+                    db_path = Some(v);
+                    i += 2;
+                }
+                None => return ExitCode::from(2),
+            },
+            "--vials" => match take_value(i, "--vials") {
+                Some(v) => {
+                    vials_dir = Some(v);
+                    i += 2;
+                }
+                None => return ExitCode::from(2),
+            },
+            "--synthesize" => match take_value(i, "--synthesize") {
+                Some(v) => {
+                    synth_request = Some(v);
+                    i += 2;
+                }
+                None => return ExitCode::from(2),
+            },
+            "--seed" => {
+                seed = true;
+                i += 1;
+            }
+            other if other.starts_with("--") => {
+                eprintln!("Error: unknown flag {other}");
+                return usage();
+            }
+            other => {
+                positional.push(other.to_string());
+                i += 1;
+            }
         }
-        db_path = Some(args[1].clone());
-        args.drain(..2);
     }
 
-    if args.first().map(String::as_str) == Some("--seed") {
+    if seed {
         let Some(path) = &db_path else {
             eprintln!("Error: --seed requires --db <db_path>.");
             return ExitCode::from(2);
@@ -84,8 +174,13 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let mut engine = match &db_path {
-        Some(path) => match SqliteVialStore::open(path) {
+    if let Some(request) = synth_request {
+        let dir = vials_dir.as_deref().unwrap_or("vials_synthesis");
+        return synthesize(&request, dir);
+    }
+
+    let mut engine = if let Some(path) = &db_path {
+        match SqliteVialStore::open(path) {
             Ok(store) => {
                 let mut engine = Engine::with_store(store);
                 // Schema metadata for functional predicates: each subject
@@ -98,15 +193,28 @@ fn main() -> ExitCode {
                 eprintln!("Error opening database {path:?}: {e}");
                 return ExitCode::FAILURE;
             }
-        },
-        None => build_engine(),
+        }
+    } else if let Some(dir) = &vials_dir {
+        match engine_from_dir(dir) {
+            Ok(engine) => engine,
+            Err(e) => {
+                eprintln!("Error loading vials from {dir:?}: {e}");
+                return ExitCode::FAILURE;
+            }
+        }
+    } else {
+        build_engine()
     };
 
-    let goals: Vec<Pattern> = match args.len() {
-        3 => vec![(parse_term(&args[0]), parse_term(&args[1]), parse_term(&args[2]))],
+    let goals: Vec<Pattern> = match positional.len() {
+        3 => vec![(
+            parse_term(&positional[0]),
+            parse_term(&positional[1]),
+            parse_term(&positional[2]),
+        )],
         0 => {
-            if db_path.is_some() {
-                eprintln!("Error: When querying a database, you must specify a triple goal query, e.g.:");
+            if db_path.is_some() || vials_dir.is_some() {
+                eprintln!("Error: When querying a database or vial directory, you must specify a triple goal, e.g.:");
                 eprintln!("  dsce --db dsce.sqlite modesto located_in ?where");
                 return ExitCode::from(2);
             }

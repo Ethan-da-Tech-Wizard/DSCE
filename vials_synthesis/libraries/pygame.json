@@ -1,0 +1,39 @@
+{
+  "id": "pygame_graphics",
+  "concept": "Pygame graphics library: screen initialization, surface rendering, event polling, and color tables. Pure API data — no rules, no references to any other library; the pattern vials bind to it through 'provides' and 'is_a graphics_library'.",
+  "facts": [
+    ["pygame", "is_a", "graphics_library"],
+    ["pygame", "provides", "graphics"],
+
+    ["pygame", "function", "pygame.init"],
+    ["pygame.init", "returns", "None"],
+    ["pygame", "function", "pygame.display.set_mode"],
+    ["pygame.display.set_mode", "param", "size"],
+    ["pygame.display.set_mode", "returns", "Surface"],
+    ["pygame", "function", "pygame.display.flip"],
+    ["pygame.display.flip", "returns", "None"],
+    ["pygame", "function", "pygame.event.get"],
+    ["pygame.event.get", "returns", "list[Event]"],
+    ["pygame", "function", "pygame.draw.rect"],
+    ["pygame.draw.rect", "param", "surface"],
+    ["pygame.draw.rect", "param", "color"],
+    ["pygame.draw.rect", "param", "rect"],
+    ["pygame", "function", "Surface.fill"],
+    ["Surface.fill", "param", "color"],
+    ["pygame", "function", "Clock.tick"],
+    ["Clock.tick", "param", "framerate"],
+
+    ["pygame", "color", "black"],
+    ["black", "rgb", "(0, 0, 0)"],
+    ["pygame", "color", "white"],
+    ["white", "rgb", "(255, 255, 255)"],
+    ["pygame", "color", "green"],
+    ["green", "rgb", "(40, 200, 90)"],
+
+    ["pygame", "code_init", "import pygame\npygame.init()\nscreen = pygame.display.set_mode((640, 480))\nclock = pygame.time.Clock()\n"],
+    ["pygame", "code_grid_render", "def draw_grid(screen, grid, cell=32):\n    for y, row in enumerate(grid):\n        for x, val in enumerate(row):\n            color = (40, 200, 90) if val else (0, 0, 0)\n            pygame.draw.rect(screen, color, (x * cell, y * cell, cell - 1, cell - 1))\n    pygame.display.flip()\n"],
+    ["pygame", "code_events", "def poll_input(state):\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            state['running'] = False\n        elif event.type == pygame.KEYDOWN:\n            state['last_key'] = event.key\n"]
+  ],
+  "evidence": ["pygame 2.x documentation, https://pygame.org/docs"],
+  "confidence": 0.99
+}

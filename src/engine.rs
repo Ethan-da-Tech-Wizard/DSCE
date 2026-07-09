@@ -42,12 +42,28 @@ use crate::sand::Grain;
 use crate::vial::{Rule, Vial};
 
 /// Properties the engine knows about a predicate, independent of any vial.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct PredicateInfo {
     /// A functional predicate maps each subject to AT MOST ONE object
     /// (e.g. `located_in`, `height`). Two facts sharing subject and
     /// predicate but disagreeing on the object are a CONFLICT.
     pub functional: bool,
+    /// An ANNOTATION predicate (`emits_sand == false`) describes knowledge
+    /// without spreading activation: facts under it never emit grains.
+    /// Used for API-documentation predicates like `param`/`returns`, whose
+    /// objects ("None", "size", ...) are shared vocabulary across many
+    /// unrelated vials — letting them carry sand builds accidental bridges
+    /// between libraries and destroys sparsity.
+    pub emits_sand: bool,
+}
+
+impl Default for PredicateInfo {
+    fn default() -> PredicateInfo {
+        PredicateInfo {
+            functional: false,
+            emits_sand: true,
+        }
+    }
 }
 
 /// One fact that satisfied the goal, plus everything needed to trust it.
@@ -214,7 +230,20 @@ impl Engine {
     /// Register schema metadata for a predicate (e.g. mark `located_in`
     /// or `height` as functional so conflicting values raise warnings).
     pub fn register_predicate(&mut self, name: impl Into<String>, functional: bool) {
-        self.predicates.insert(name.into(), PredicateInfo { functional });
+        self.predicates.entry(name.into()).or_default().functional = functional;
+    }
+
+    /// Mark a predicate as pure annotation: facts under it are matched by
+    /// rules as usual but never emit sand (see [`PredicateInfo::emits_sand`]).
+    pub fn register_annotation(&mut self, name: impl Into<String>) {
+        self.predicates.entry(name.into()).or_default().emits_sand = false;
+    }
+
+    fn predicate_emits_sand(&self, pred: &Term) -> bool {
+        match pred {
+            Term::Str(name) => self.predicates.get(name).map(|p| p.emits_sand).unwrap_or(true),
+            _ => true,
+        }
     }
 
     /// Register a vial. Ids must be unique — silently replacing knowledge
@@ -290,6 +319,17 @@ impl Engine {
     /// Takes `&mut self` because a database-backed engine loads activated
     /// vials into memory as the flood reaches them.
     pub fn ask(&mut self, goal: &Pattern) -> QueryResult {
+        self.ask_with_facts(goal, &[])
+    }
+
+    /// Like [`Engine::ask`], but pours `extra_facts` into working memory
+    /// BEFORE the flood starts. This is the Semantic Harvester's entry
+    /// point: dynamic vocabulary triples (e.g.
+    /// `("scoring_system", "is_a", "state_machine")`) asserted for one
+    /// query only, mapping the user's words onto the knowledge base's
+    /// generic terms. The poured facts also emit seed sand, so they steer
+    /// which vials wake.
+    pub fn ask_with_facts(&mut self, goal: &Pattern, extra_facts: &[Fact]) -> QueryResult {
         let index = self.build_index();
 
         // Working memory: every fact known so far in THIS query, mapped to
@@ -318,6 +358,30 @@ impl Engine {
             seeds.push(goal.1.clone());
         }
         let mut grains: Vec<Grain> = seeds.into_iter().map(|t| Grain::new(t, "query", 0)).collect();
+
+        // Extra facts asserted by the query itself (harvested vocabulary)
+        // enter working memory as query-owned axioms and emit seed sand
+        // for their subject and object, exactly like derived facts do.
+        for fact in extra_facts {
+            if !wm.contains_key(fact) {
+                if let Some(conflict) = self.check_conflict(fact, &wm) {
+                    conflicts.push(conflict);
+                }
+                wm.insert(
+                    fact.clone(),
+                    Derivation {
+                        fact: fact.clone(),
+                        vial_id: "query".to_string(),
+                        confidence: 1.0,
+                        rule_name: None,
+                        premises: Vec::new(),
+                        evidence: vec!["asserted by query".to_string()],
+                    },
+                );
+                grains.push(Grain::new(fact.0.clone(), "query", 0));
+                grains.push(Grain::new(fact.2.clone(), "query", 0));
+            }
+        }
         let mut total_grains = grains.len();
         let mut ticks = 0;
 
@@ -429,9 +493,12 @@ impl Engine {
             // STEP 5: new facts become new sand for the NEXT tick. Only
             // the subject and object emit grains — predicates are
             // relations, not entities, and letting them carry sand wakes
-            // the entire network and destroys sparsity.
+            // the entire network and destroys sparsity. Facts under
+            // ANNOTATION predicates (API documentation like param/returns)
+            // emit nothing at all.
             grains = new_facts
                 .iter()
+                .filter(|fact| self.predicate_emits_sand(&fact.1))
                 .flat_map(|fact| {
                     let origin = wm[fact].vial_id.clone();
                     [

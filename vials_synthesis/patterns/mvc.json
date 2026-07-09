@@ -1,0 +1,95 @@
+{
+  "id": "mvc",
+  "concept": "Model-View-Controller pattern: separates state databases (Model), screen representations (View), and input listener callbacks (Controller). Also owns the capability binder — the single rule that connects an app's abstract 'needs' to whichever library 'provides' that capability — and the final program assembler. Mentions only abstract library classes, never a concrete library.",
+  "facts": [
+    ["mvc", "separates", "model"],
+    ["mvc", "separates", "view"],
+    ["mvc", "separates", "controller"],
+    ["model", "holds", "state_database"],
+    ["view", "holds", "screen_representation"],
+    ["controller", "holds", "input_listeners"]
+  ],
+  "rules": [
+    {
+      "name": "bind-capability",
+      "premises": [
+        ["?app", "needs", "?capability"],
+        ["?lib", "provides", "?capability"]
+      ],
+      "conclusion": ["?app", "uses", "?lib"]
+    },
+    {
+      "name": "view-init",
+      "premises": [
+        ["?app", "uses", "?lib"],
+        ["?lib", "is_a", "graphics_library"],
+        ["?lib", "code_init", "?init"]
+      ],
+      "conclusion": ["?app", "code_view_init", "?init"]
+    },
+    {
+      "name": "view",
+      "premises": [
+        ["?app", "code_view_init", "?init"],
+        ["?app", "code_view_body", "?body"]
+      ],
+      "conclusion": ["?app", "code_view", "?view"],
+      "compute": "?view = ?init + ?body"
+    },
+    {
+      "name": "model-storage",
+      "premises": [
+        ["?app", "uses", "?db"],
+        ["?db", "is_a", "database_library"],
+        ["?db", "code_schema", "?schema"],
+        ["?db", "code_store", "?store"]
+      ],
+      "conclusion": ["?app", "code_storage", "?code"],
+      "compute": "?code = ?schema + ?store"
+    },
+    {
+      "name": "model",
+      "premises": [
+        ["?app", "code_state", "?state"],
+        ["?app", "code_storage", "?storage"]
+      ],
+      "conclusion": ["?app", "code_model", "?model"],
+      "compute": "?model = ?state + ?storage"
+    },
+    {
+      "name": "controller-network",
+      "premises": [
+        ["?app", "uses", "?net"],
+        ["?net", "is_a", "networking_library"],
+        ["?net", "code_listen", "?listen"],
+        ["?net", "code_serve", "?serve"]
+      ],
+      "conclusion": ["?app", "code_net", "?code"],
+      "compute": "?code = ?listen + ?serve"
+    },
+    {
+      "name": "controller",
+      "premises": [
+        ["?app", "code_net", "?net"],
+        ["?app", "uses", "?lib"],
+        ["?lib", "is_a", "graphics_library"],
+        ["?lib", "code_events", "?events"]
+      ],
+      "conclusion": ["?app", "code_controller", "?code"],
+      "compute": "?code = ?events + ?net"
+    },
+    {
+      "name": "assemble-application",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "code_model", "?model"],
+        ["?app", "code_view", "?view"],
+        ["?app", "code_controller", "?controller"],
+        ["?app", "code_loop", "?loop"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = '# assembled by the DSCE generic software assembler\\n' + ?model + ?view + ?controller + ?loop"
+    }
+  ],
+  "evidence": ["Krasner & Pope, A cookbook for using the model-view-controller pattern (1988)"]
+}

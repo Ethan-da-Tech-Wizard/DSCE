@@ -111,6 +111,55 @@ The Rust store reads databases seeded by the Python `SqliteVialStore`
 (Python-lambda compute bodies degrade to "no compute"; use the expression
 DSL for computed rules that must round-trip).
 
+## Generic software assembler (`vials_synthesis/`)
+
+The Rust engine doubles as a zero-shot software assembler: instead of
+hardcoded application templates, the knowledge base holds *generic design
+patterns* and *API library documentation*, and programs are assembled by
+Datalog rules splicing code fragments with string concatenation
+(`?code = ?code1 + ?code2` in the compute DSL).
+
+```
+vials_synthesis/
+  patterns/     structural knowledge (rules + facts)
+    grid_layout.json   coordinate axes, row/column flow, nesting bounds
+    mvc.json           Model-View-Controller separation + the capability
+                       binder and final program assembler
+    fsm.json           state nodes, transition keys, loop ticks
+  libraries/    normalized API documentation (pure data, zero rules)
+    pygame.json        screen init, surface rendering, event polling, colors
+    sqlite.json        connections, schema, execute, fetch cursors
+    websockets.json    serving, listeners, packet send, closure
+```
+
+The **Semantic Harvester** (`src/harvester.rs`) bridges natural language
+and the engine. It turns a request into a Datalog goal plus dynamic
+vocabulary triples poured into working memory for that one query:
+
+```console
+$ cargo run -- --synthesize "Make a multiplayer grid game with a scoring system"
+harvested goal: (multiplayer_grid_game code ?code)
+harvested vocabulary:
+  (multiplayer_grid_game is_a application)
+  (multiplayer_grid_game needs grid_layout)
+  (scoring_system is_a state_machine)
+  ...
+--- assembled program #1 (confidence 0.980) ---
+# assembled by the DSCE generic software assembler
+...valid Python: pygame view, sqlite model, websockets controller, FSM loop
+```
+
+An LLM-backed harvest is supported too: `harvester::PROMPT_TEMPLATE`
+compiles a creative request into strict JSON once, then the engine reasons
+deterministically — same knowledge base + same harvest = byte-identical
+program and proof, every run. The library vials never reference one
+another; the MVC pattern's `bind-capability` rule connects an app's
+abstract `needs` to whichever library `provides` that capability.
+Documentation predicates (`param`, `returns`, ...) are registered as
+*annotations*: rules can match them but they emit no sand, so shared API
+vocabulary ("None", "size") cannot build activation bridges between
+unrelated libraries.
+
 ## Using it as a library
 
 ```python

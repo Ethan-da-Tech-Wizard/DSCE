@@ -1,0 +1,42 @@
+{
+  "id": "grid_layout",
+  "concept": "Generic grid layout pattern: coordinate axes, row/column flow direction, container-bounded nesting, and a cell data model. Knows nothing about any concrete graphics library; it binds to whichever library the app 'uses' purely through Datalog rules.",
+  "facts": [
+    ["grid_layout", "axis_x", "columns"],
+    ["grid_layout", "axis_y", "rows"],
+    ["grid_layout", "flow", "row_major"],
+    ["grid_layout", "nesting", "container_bounded"],
+    ["grid_layout", "code_cells", "GRID_W, GRID_H = 20, 15\ngrid = [[0] * GRID_W for _ in range(GRID_H)]\n"]
+  ],
+  "rules": [
+    {
+      "name": "grid-flow-direction",
+      "premises": [
+        ["?app", "needs", "grid_layout"],
+        ["grid_layout", "flow", "?flow"]
+      ],
+      "conclusion": ["?app", "layout_flow", "?flow"]
+    },
+    {
+      "name": "grid-nesting-boundary",
+      "premises": [
+        ["?app", "needs", "grid_layout"],
+        ["grid_layout", "nesting", "?bound"]
+      ],
+      "conclusion": ["?app", "layout_nesting", "?bound"]
+    },
+    {
+      "name": "grid-view-body",
+      "premises": [
+        ["?app", "needs", "grid_layout"],
+        ["grid_layout", "code_cells", "?cells"],
+        ["?app", "uses", "?lib"],
+        ["?lib", "is_a", "graphics_library"],
+        ["?lib", "code_grid_render", "?render"]
+      ],
+      "conclusion": ["?app", "code_view_body", "?body"],
+      "compute": "?body = ?cells + ?render"
+    }
+  ],
+  "evidence": ["Grid/tiling layout: standard CS layout pattern"]
+}

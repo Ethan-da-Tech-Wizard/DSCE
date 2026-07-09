@@ -1,0 +1,34 @@
+{
+  "id": "finite_state_machine",
+  "concept": "Generic finite state machine pattern: state nodes, transition keys, and loop ticks. Any feature declared 'is_a state_machine' (a dynamic vocabulary triple from the harvester) receives this state model. The loop glue expects the view/controller symbols (poll_input, draw_grid, screen, grid, clock) that the assembled program defines earlier.",
+  "facts": [
+    ["state_machine", "has_part", "state_node"],
+    ["state_machine", "has_part", "transition_key"],
+    ["state_machine", "ticks_via", "loop_tick"],
+    ["state_machine", "code_states", "STATES = ('menu', 'playing', 'game_over')\nstate = {'mode': 'playing', 'running': True, 'score': 0}\n"],
+    ["state_machine", "code_tick", "def tick(state):\n    if state['mode'] == 'playing':\n        state['score'] += 1\n    return state['running']\n"],
+    ["state_machine", "code_loop", "def main():\n    while tick(state):\n        poll_input(state)\n        draw_grid(screen, grid)\n        clock.tick(30)\n\nmain()\n"]
+  ],
+  "rules": [
+    {
+      "name": "fsm-state-code",
+      "premises": [
+        ["?app", "has_feature", "?feature"],
+        ["?feature", "is_a", "state_machine"],
+        ["state_machine", "code_states", "?states"],
+        ["state_machine", "code_tick", "?tick"]
+      ],
+      "conclusion": ["?app", "code_state", "?code"],
+      "compute": "?code = ?states + ?tick"
+    },
+    {
+      "name": "fsm-loop-code",
+      "premises": [
+        ["?app", "code_state", "?state_code"],
+        ["state_machine", "code_loop", "?loop"]
+      ],
+      "conclusion": ["?app", "code_loop", "?loop"]
+    }
+  ],
+  "evidence": ["Finite state machines: standard CS control pattern; game loop folklore"]
+}

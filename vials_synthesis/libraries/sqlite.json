@@ -1,0 +1,30 @@
+{
+  "id": "sqlite_databases",
+  "concept": "SQLite database library: connection creation, schema declarations, execution commands, and fetch cursors. Pure API data — no rules, no references to any other library; the pattern vials bind to it through 'provides' and 'is_a database_library'.",
+  "facts": [
+    ["sqlite3", "is_a", "database_library"],
+    ["sqlite3", "provides", "persistence"],
+
+    ["sqlite3", "function", "sqlite3.connect"],
+    ["sqlite3.connect", "param", "path"],
+    ["sqlite3.connect", "returns", "Connection"],
+    ["sqlite3", "function", "Connection.execute"],
+    ["Connection.execute", "param", "sql"],
+    ["Connection.execute", "param", "parameters"],
+    ["Connection.execute", "returns", "Cursor"],
+    ["sqlite3", "function", "Connection.commit"],
+    ["Connection.commit", "returns", "None"],
+    ["sqlite3", "function", "Connection.close"],
+    ["sqlite3", "function", "Cursor.fetchone"],
+    ["Cursor.fetchone", "returns", "Row"],
+    ["sqlite3", "function", "Cursor.fetchmany"],
+    ["Cursor.fetchmany", "param", "size"],
+    ["Cursor.fetchmany", "returns", "list[Row]"],
+
+    ["sqlite3", "code_schema", "import sqlite3\ndb = sqlite3.connect('game.db')\ndb.execute('CREATE TABLE IF NOT EXISTS scores (player TEXT, points INTEGER)')\ndb.commit()\n"],
+    ["sqlite3", "code_store", "def save_score(player, points):\n    db.execute('INSERT INTO scores VALUES (?, ?)', (player, points))\n    db.commit()\n"],
+    ["sqlite3", "code_fetch", "def top_scores(limit=10):\n    cur = db.execute('SELECT player, points FROM scores ORDER BY points DESC')\n    return cur.fetchmany(limit)\n"]
+  ],
+  "evidence": ["Python standard library sqlite3 documentation"],
+  "confidence": 0.99
+}

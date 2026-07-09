@@ -21,11 +21,15 @@
 //!   fires fine from the rayon-parallel rule loop. The closure MUST be pure
 //!   and deterministic or the engine's determinism guarantee is broken.
 //!
-//! The evaluator supports `+ - * /`, unary minus, parentheses, integer and
-//! float literals, and `?variables`. Int op Int stays Int (except `/`,
-//! which always yields a float, mirroring Python's true division); any
-//! float operand promotes the result to float. Division by zero or an
-//! unbound variable makes evaluation fail, which the engine treats as
+//! The evaluator supports `+ - * /`, unary minus, parentheses, integer,
+//! float, and quoted string literals (`'...'` or `"..."` with `\n`, `\t`,
+//! `\\`, `\'`, `\"` escapes), and `?variables`. Int op Int stays Int
+//! (except `/`, which always yields a float, mirroring Python's true
+//! division); any float operand promotes the result to float. When either
+//! side of `+` is a STRING the operator concatenates — this is what lets
+//! the software assembler splice code fragments with rules like
+//! `?code = ?code1 + ?code2`. Division by zero, arithmetic on strings, or
+//! an unbound variable makes evaluation fail, which the engine treats as
 //! "this rule cannot conclude anything for this match".
 
 use std::fmt;
@@ -137,6 +141,7 @@ impl ExprProgram {
 enum Expr {
     Int(i64),
     Float(f64),
+    Str(String),
     Var(String),
     Neg(Box<Expr>),
     Bin(Op, Box<Expr>, Box<Expr>),
@@ -150,11 +155,13 @@ enum Op {
     Div,
 }
 
-/// Intermediate numeric value: keeps ints exact until a float enters.
-#[derive(Debug, Clone, Copy)]
+/// Intermediate value: keeps ints exact until a float enters; strings
+/// participate only in `+` (concatenation).
+#[derive(Debug, Clone)]
 enum Value {
     Int(i64),
     Float(f64),
+    Str(String),
 }
 
 impl Value {
@@ -162,13 +169,25 @@ impl Value {
         match self {
             Value::Int(i) => Term::Int(i),
             Value::Float(f) => Term::float(f),
+            Value::Str(s) => Term::Str(s),
         }
     }
 
-    fn as_f64(self) -> f64 {
+    /// Numeric view; `None` for strings so arithmetic on them fails softly.
+    fn as_f64(&self) -> Option<f64> {
         match self {
-            Value::Int(i) => i as f64,
-            Value::Float(f) => f,
+            Value::Int(i) => Some(*i as f64),
+            Value::Float(f) => Some(*f),
+            Value::Str(_) => None,
+        }
+    }
+
+    /// Text view, used when `+` concatenates a string with anything.
+    fn render(&self) -> String {
+        match self {
+            Value::Int(i) => i.to_string(),
+            Value::Float(f) => format!("{f:?}"),
+            Value::Str(s) => s.clone(),
         }
     }
 }
@@ -178,37 +197,52 @@ impl Expr {
         match self {
             Expr::Int(i) => Some(Value::Int(*i)),
             Expr::Float(f) => Some(Value::Float(*f)),
+            Expr::Str(s) => Some(Value::Str(s.clone())),
             Expr::Var(name) => {
                 let term = extra.get(name).or_else(|| bindings.get(name))?;
                 match term {
                     Term::Int(i) => Some(Value::Int(*i)),
                     Term::Float(f) => Some(Value::Float(f.0)),
-                    Term::Bool(_) | Term::Str(_) => None, // arithmetic over non-numbers is undefined
+                    Term::Str(s) => Some(Value::Str(s.clone())),
+                    Term::Bool(_) => None, // no boolean algebra in this DSL
                 }
             }
             Expr::Neg(inner) => match inner.eval(bindings, extra)? {
                 Value::Int(i) => Some(Value::Int(i.checked_neg()?)),
                 Value::Float(f) => Some(Value::Float(-f)),
+                Value::Str(_) => None,
             },
             Expr::Bin(op, lhs, rhs) => {
                 let l = lhs.eval(bindings, extra)?;
                 let r = rhs.eval(bindings, extra)?;
-                match (op, l, r) {
-                    (Op::Add, Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_add(b)?)),
-                    (Op::Sub, Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_sub(b)?)),
-                    (Op::Mul, Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_mul(b)?)),
+                match op {
+                    Op::Add => match (l, r) {
+                        (Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_add(b)?)),
+                        // If either side is a string, `+` concatenates —
+                        // this is how the assembler splices code fragments
+                        // (`?code = ?code1 + ?code2`).
+                        (l, r) if matches!(l, Value::Str(_)) || matches!(r, Value::Str(_)) => {
+                            Some(Value::Str(format!("{}{}", l.render(), r.render())))
+                        }
+                        (l, r) => Some(Value::Float(l.as_f64()? + r.as_f64()?)),
+                    },
+                    Op::Sub => match (l, r) {
+                        (Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_sub(b)?)),
+                        (l, r) => Some(Value::Float(l.as_f64()? - r.as_f64()?)),
+                    },
+                    Op::Mul => match (l, r) {
+                        (Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_mul(b)?)),
+                        (l, r) => Some(Value::Float(l.as_f64()? * r.as_f64()?)),
+                    },
                     // Division is always true division (Python semantics).
-                    (Op::Div, a, b) => {
-                        let d = b.as_f64();
+                    Op::Div => {
+                        let d = r.as_f64()?;
                         if d == 0.0 {
                             None
                         } else {
-                            Some(Value::Float(a.as_f64() / d))
+                            Some(Value::Float(l.as_f64()? / d))
                         }
                     }
-                    (Op::Add, a, b) => Some(Value::Float(a.as_f64() + b.as_f64())),
-                    (Op::Sub, a, b) => Some(Value::Float(a.as_f64() - b.as_f64())),
-                    (Op::Mul, a, b) => Some(Value::Float(a.as_f64() * b.as_f64())),
                 }
             }
         }
@@ -218,6 +252,7 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
     Num(String),
+    Str(String),
     Var(String),
     Plus,
     Minus,
@@ -264,6 +299,40 @@ impl Parser {
                 ')' => {
                     tokens.push(Token::RParen);
                     i += 1;
+                }
+                '"' | '\'' => {
+                    let quote = c;
+                    i += 1;
+                    let mut text = String::new();
+                    loop {
+                        match chars.get(i) {
+                            None => return Err("unterminated string literal".to_string()),
+                            Some(&ch) if ch == quote => {
+                                i += 1;
+                                break;
+                            }
+                            Some('\\') => {
+                                let escaped = chars
+                                    .get(i + 1)
+                                    .ok_or_else(|| "dangling escape at end of string".to_string())?;
+                                text.push(match escaped {
+                                    'n' => '\n',
+                                    't' => '\t',
+                                    'r' => '\r',
+                                    '\\' => '\\',
+                                    '\'' => '\'',
+                                    '"' => '"',
+                                    other => return Err(format!("unknown escape \\{other} in string")),
+                                });
+                                i += 2;
+                            }
+                            Some(&ch) => {
+                                text.push(ch);
+                                i += 1;
+                            }
+                        }
+                    }
+                    tokens.push(Token::Str(text));
                 }
                 '?' => {
                     let start = i;
@@ -355,6 +424,7 @@ impl Parser {
                         .map_err(|_| format!("bad number literal {text:?}"))
                 }
             }
+            Some(Token::Str(text)) => Ok(Expr::Str(text)),
             Some(Token::Var(name)) => Ok(Expr::Var(name)),
             Some(Token::Minus) => Ok(Expr::Neg(Box::new(self.parse_factor()?))),
             Some(Token::LParen) => {
@@ -422,6 +492,34 @@ mod tests {
         let c = Compute::expr("?double = ?v * 2; ?quad = ?double * 2").unwrap();
         let extra = c.eval(&bindings(&[("?v", Term::Int(3))])).unwrap();
         assert_eq!(extra.get("?quad"), Some(&Term::Int(12)));
+    }
+
+    #[test]
+    fn string_concatenation() {
+        let c = Compute::expr("?code = ?code1 + ?code2").unwrap();
+        let extra = c
+            .eval(&bindings(&[
+                ("?code1", Term::str("import pygame\n")),
+                ("?code2", Term::str("pygame.init()\n")),
+            ]))
+            .unwrap();
+        assert_eq!(
+            extra.get("?code"),
+            Some(&Term::str("import pygame\npygame.init()\n"))
+        );
+    }
+
+    #[test]
+    fn string_literals_and_mixed_concat() {
+        let c = Compute::expr("?msg = 'score: ' + ?points + \"\\n\"").unwrap();
+        let extra = c.eval(&bindings(&[("?points", Term::Int(42))])).unwrap();
+        assert_eq!(extra.get("?msg"), Some(&Term::str("score: 42\n")));
+    }
+
+    #[test]
+    fn arithmetic_on_strings_fails_softly() {
+        let c = Compute::expr("?x = ?s * 2").unwrap();
+        assert!(c.eval(&bindings(&[("?s", Term::str("abc"))])).is_none());
     }
 
     #[test]
