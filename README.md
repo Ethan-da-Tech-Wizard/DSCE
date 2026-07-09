@@ -210,6 +210,12 @@ const { app, BrowserWindow } = require('electron');
 ...
 ```
 
+The full catalog of libraries and frameworks queued for vial authoring —
+GUI toolkits and web stacks for every target language, plus cross-cutting
+infrastructure — lives in
+[docs/DEPENDENCY_ROADMAP.md](docs/DEPENDENCY_ROADMAP.md) (a living
+document; more to come).
+
 ## Using it as a library
 
 ```python
