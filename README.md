@@ -83,6 +83,34 @@ Note what happened: a geometry question left the philosophy and biology vials
 dormant, the answer 360 was *computed* (12 × 30), and the proof cites the
 site survey the measurements came from.
 
+## Rust implementation
+
+The repository also contains a high-performance Rust port of the engine
+(`Cargo.toml` + `src/`), with the same sand-and-vials model plus:
+
+- a typed `Term` enum (`Str`/`Int`/`Float`/`Bool`) instead of duck typing,
+- rayon-parallel rule matching over active vials (merged in a stable order,
+  so parallelism never costs determinism),
+- SQLite-backed vial storage via `rusqlite` with dynamic on-demand loading —
+  dormant vials never leave disk,
+- a small deterministic expression DSL (`?a = ?w * ?h`) replacing Python
+  lambdas for rule computations, so rules round-trip through the database
+  without `eval()`,
+- functional-predicate conflict warnings and specificity notes, as in the
+  Python prototype.
+
+```console
+$ cargo run                                              # in-memory demo showcase
+$ cargo run -- socrates is_mortal ?answer                # ask your own triple
+$ cargo run -- --db dsce.sqlite --seed                   # seed a SQLite database
+$ cargo run -- --db dsce.sqlite "modesto" "located_in" "?where"
+$ cargo test                                             # run the Rust test suite
+```
+
+The Rust store reads databases seeded by the Python `SqliteVialStore`
+(Python-lambda compute bodies degrade to "no compute"; use the expression
+DSL for computed rules that must round-trip).
+
 ## Using it as a library
 
 ```python
@@ -120,7 +148,17 @@ dsce/
   proof.py     derivation records and proof-tree rendering
   demo_kb.py   a small four-vial demonstration knowledge base
   __main__.py  CLI entry point
-tests/         test suite (unification, inference, determinism, sparsity)
+src/
+  facts.rs     (Rust) Term enum, triples, unification, specificity
+  vial.rs      (Rust) Vial and Rule structs
+  sand.rs      (Rust) Grain — the activation particles
+  compute.rs   (Rust) deterministic, serializable rule computations
+  engine.rs    (Rust) the flood loop with rayon-parallel rule firing
+  db_store.rs  (Rust) SQLite persistence and dynamic vial loading
+  proof.rs     (Rust) derivation records and proof-tree rendering
+  demo_kb.rs   (Rust) the demonstration knowledge base
+  main.rs      (Rust) CLI entry point
+tests/         Python test suite + Rust integration tests (engine_tests.rs)
 docs/          full documentation set — see below
 ```
 
