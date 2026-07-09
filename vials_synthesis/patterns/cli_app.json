@@ -1,0 +1,18 @@
+{
+  "id": "cli_app",
+  "concept": "Generic Command Line Interface pattern",
+  "rules": [
+    {
+      "name": "assemble-cli-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "uses", "?lib"],
+        ["?lib", "code_init", "?init"],
+        ["?lib", "code_gen", "?gen"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = '# assembled by the DSCE generic CLI assembler\\n' + ?init + ?gen"
+    }
+  ],
+  "evidence": ["Command-line interfaces: standard simple console utilities"]
+}

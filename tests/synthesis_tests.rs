@@ -28,10 +28,12 @@ fn synthesis_kb_loads_completely() {
     assert_eq!(
         ids,
         vec![
+            "cli_app",
             "finite_state_machine",
             "grid_layout",
             "mvc",
             "pygame_graphics",
+            "random_generator",
             "sqlite_databases",
             "websockets_networking",
         ]
@@ -150,4 +152,17 @@ fn vocabulary_triples_steer_generic_patterns() {
         .derivations
         .values()
         .any(|d| d.vial_id == "grid_layout" && d.rule_name.is_some()));
+}
+
+#[test]
+fn random_number_generator_synthesis() {
+    let result = synthesize("Make a random number generator");
+    assert_eq!(result.answers.len(), 1);
+    let answer = &result.answers[0];
+    let Some(Term::Str(code)) = answer.bindings.get("?code") else {
+        panic!("?code did not bind to a string");
+    };
+    assert!(code.starts_with("# assembled by the DSCE generic CLI assembler"));
+    assert!(code.contains("import random"));
+    assert!(code.contains("print(random.randint(1, 100))"));
 }

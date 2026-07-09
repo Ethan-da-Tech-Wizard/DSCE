@@ -142,6 +142,9 @@ pub fn harvest_offline(request: &str) -> Harvest {
     };
 
     // Capability keywords. Checked in a fixed order — determinism again.
+    if matches_any(&tokens, &["random", "rand", "generator"]) {
+        push(needs("random_generation"), &mut triples);
+    }
     if matches_any(&tokens, &["grid", "board", "tile", "tiles", "cells", "checkerboard"]) {
         push(needs("grid_layout"), &mut triples);
         push(needs("graphics"), &mut triples);

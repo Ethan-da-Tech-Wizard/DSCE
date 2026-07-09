@@ -1,0 +1,12 @@
+{
+  "id": "random_generator",
+  "concept": "Python random standard library documentation",
+  "confidence": 1.0,
+  "evidence": ["Python standard library random module documentation"],
+  "facts": [
+    ["random", "is_a", "generator_library"],
+    ["random", "provides", "random_generation"],
+    ["random", "code_init", "import random\n"],
+    ["random", "code_gen", "print(random.randint(1, 100))\n"]
+  ]
+}
