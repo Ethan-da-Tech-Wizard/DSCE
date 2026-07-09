@@ -83,6 +83,31 @@ fn synthesize(request: &str, vials_dir: &str) -> ExitCode {
     let result = engine.ask_with_facts(&harvest.goal, &harvest.triples);
     println!("{}", result.summary());
 
+    // Dependency reasoning: everything the bound frameworks depend on
+    // (transitively) plus their documented install channels. Derived by
+    // the dependency_resolution pattern vial; BTreeMap iteration keeps
+    // the listing deterministic.
+    let app_term = Term::str(harvest.app.clone());
+    let objects_of = |predicate: &str| -> Vec<String> {
+        result
+            .derivations
+            .keys()
+            .filter(|f| f.0 == app_term && f.1 == Term::str(predicate))
+            .map(|f| f.2.to_string())
+            .collect()
+    };
+    let dependencies = objects_of("requires_dependency");
+    if !dependencies.is_empty() {
+        println!("\nresolved dependencies: {}", dependencies.join(", "));
+    }
+    let install_steps = objects_of("install_step");
+    if !install_steps.is_empty() {
+        println!("install steps:");
+        for step in install_steps {
+            println!("  $ {step}");
+        }
+    }
+
     for (i, answer) in result.answers.iter().enumerate() {
         if let Some(Term::Str(code)) = answer.bindings.get("?code") {
             println!("\n--- assembled program #{} (confidence {:.3}) ---", i + 1, answer.confidence);

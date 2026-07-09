@@ -136,10 +136,11 @@ pub fn load_vials_dir(dir: impl AsRef<Path>) -> Result<Vec<Vial>, String> {
 ///
 /// - FUNCTIONAL predicates (`located_in`, `height`): one value per subject;
 ///   disagreements raise conflict warnings.
-/// - ANNOTATION predicates (`function`, `param`, `returns`, `color`, `rgb`):
+/// - ANNOTATION predicates (`function`, `param`, `returns`, `color`, `rgb`,
+///   toolchain metadata like `install_command`/`build_command`):
 ///   API documentation that rules can match but that never emits sand —
-///   shared doc vocabulary ("None", "size") must not build activation
-///   bridges between unrelated libraries.
+///   shared doc vocabulary ("None", "size", shell command strings) must not
+///   build activation bridges between unrelated libraries.
 pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     let mut engine = Engine::new();
     for vial in load_vials_dir(dir)? {
@@ -147,7 +148,20 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     }
     engine.register_predicate("located_in", true);
     engine.register_predicate("height", true);
-    for annotation in ["function", "param", "returns", "color", "rgb", "definition"] {
+    for annotation in [
+        "function",
+        "param",
+        "returns",
+        "color",
+        "rgb",
+        "definition",
+        "install_command",
+        "install_step",
+        "file_extension",
+        "build_command",
+        "run_command",
+        "docs_url",
+    ] {
         engine.register_annotation(annotation);
     }
     Ok(engine)

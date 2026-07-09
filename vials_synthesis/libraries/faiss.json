@@ -1,0 +1,18 @@
+{
+  "id": "faiss_vector_search",
+  "concept": "FAISS similarity search library: flat L2 index API, NumPy dependency, pip install channel.",
+  "confidence": 1.0,
+  "evidence": [
+    "FAISS documentation and wiki (github.com/facebookresearch/faiss/wiki) — IndexFlatL2, add, search",
+    "FAISS INSTALL.md — faiss-cpu pip package, NumPy requirement"
+  ],
+  "facts": [
+    ["faiss", "is_a", "framework"],
+    ["faiss", "provides", "vector_search"],
+    ["faiss", "depends_on", "numpy"],
+    ["faiss", "depends_on", "python_runtime"],
+    ["faiss", "install_command", "pip install faiss-cpu"],
+    ["faiss", "code_banner", "# assembled by the DSCE framework assembler (FAISS)\n"],
+    ["faiss", "code_snippet", "import numpy as np\nimport faiss\n\ndimension = 64\nindex = faiss.IndexFlatL2(dimension)\nvectors = np.random.random((100, dimension)).astype('float32')\nindex.add(vectors)\ndistances, ids = index.search(vectors[:1], 5)\nprint(ids)\n"]
+  ]
+}

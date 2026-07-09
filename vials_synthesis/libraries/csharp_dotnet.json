@@ -1,0 +1,17 @@
+{
+  "id": "csharp_dotnet_library",
+  "concept": ".NET base class library documentation: System.Random, System.Console.",
+  "confidence": 1.0,
+  "evidence": [
+    ".NET API browser (learn.microsoft.com/dotnet/api) — System.Random.Next, System.Console.WriteLine"
+  ],
+  "facts": [
+    ["csharp_dotnet", "is_a", "language_library"],
+    ["csharp_dotnet", "implements_language", "lang_csharp"],
+    ["lang_csharp", "file_extension", "cs"],
+    ["lang_csharp", "build_command", "dotnet build"],
+    ["lang_csharp", "run_command", "dotnet run"],
+    ["csharp_dotnet", "code_banner", "// assembled by the DSCE polyglot CLI assembler (C#)\n"],
+    ["csharp_dotnet", "code_random_cli", "using System;\n\nclass Program\n{\n    static void Main()\n    {\n        var random = new Random();\n        Console.WriteLine(random.Next(1, 101));\n    }\n}\n"]
+  ]
+}

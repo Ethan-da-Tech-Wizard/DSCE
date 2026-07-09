@@ -1,0 +1,28 @@
+{
+  "id": "framework_app",
+  "concept": "Framework script assembler: binds an app's abstract capability (tensor_computation, vector_search, web_ui, desktop_web, ...) to whichever framework vial provides it, then assembles that framework's documented starter snippet under its banner.",
+  "rules": [
+    {
+      "name": "bind-framework",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "?capability"],
+        ["?fw", "provides", "?capability"],
+        ["?fw", "is_a", "framework"]
+      ],
+      "conclusion": ["?app", "uses_framework", "?fw"]
+    },
+    {
+      "name": "assemble-framework-script",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "uses_framework", "?fw"],
+        ["?fw", "code_banner", "?banner"],
+        ["?fw", "code_snippet", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    }
+  ],
+  "evidence": ["Framework starter templates assembled from official framework documentation"]
+}

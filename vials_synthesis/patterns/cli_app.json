@@ -1,11 +1,12 @@
 {
   "id": "cli_app",
-  "concept": "Generic Command Line Interface pattern",
+  "concept": "Generic Command Line Interface pattern (Python target). Guarded on target_language lang_python so explicit requests for another language route to the polyglot assembler instead.",
   "rules": [
     {
       "name": "assemble-cli-app",
       "premises": [
         ["?app", "is_a", "application"],
+        ["?app", "target_language", "lang_python"],
         ["?app", "uses", "?lib"],
         ["?lib", "code_init", "?init"],
         ["?lib", "code_gen", "?gen"]

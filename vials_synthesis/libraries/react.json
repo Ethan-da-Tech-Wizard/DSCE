@@ -1,0 +1,18 @@
+{
+  "id": "react_framework",
+  "concept": "React web UI framework: component + createRoot API, react-dom and Node.js tooling dependencies.",
+  "confidence": 1.0,
+  "evidence": [
+    "React documentation (react.dev) — components, react-dom/client createRoot",
+    "React installation guide (react.dev/learn/installation) — Node.js-based tooling, npm packages react and react-dom"
+  ],
+  "facts": [
+    ["react", "is_a", "framework"],
+    ["react", "provides", "web_ui"],
+    ["react", "depends_on", "react_dom"],
+    ["react", "depends_on", "node_js"],
+    ["react", "install_command", "npm install react react-dom"],
+    ["react", "code_banner", "// assembled by the DSCE framework assembler (React)\n"],
+    ["react", "code_snippet", "import { createRoot } from 'react-dom/client';\n\nfunction App() {\n  return <h1>Hello from React</h1>;\n}\n\ncreateRoot(document.getElementById('root')).render(<App />);\n"]
+  ]
+}

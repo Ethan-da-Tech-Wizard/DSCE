@@ -1,0 +1,17 @@
+{
+  "id": "c_std_library",
+  "concept": "ISO C standard library documentation: stdio.h, stdlib.h rand/srand, time.h.",
+  "confidence": 1.0,
+  "evidence": [
+    "ISO/IEC 9899 (C standard) — <stdlib.h> rand/srand, <time.h> time, <stdio.h> printf"
+  ],
+  "facts": [
+    ["c_std", "is_a", "language_library"],
+    ["c_std", "implements_language", "lang_c"],
+    ["lang_c", "file_extension", "c"],
+    ["lang_c", "build_command", "gcc main.c -o main"],
+    ["lang_c", "run_command", "./main"],
+    ["c_std", "code_banner", "/* assembled by the DSCE polyglot CLI assembler (C) */\n"],
+    ["c_std", "code_random_cli", "#include <stdio.h>\n#include <stdlib.h>\n#include <time.h>\n\nint main(void) {\n    srand((unsigned) time(NULL));\n    printf(\"%d\\n\", rand() % 100 + 1);\n    return 0;\n}\n"]
+  ]
+}

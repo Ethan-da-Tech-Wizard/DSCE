@@ -1,0 +1,28 @@
+{
+  "id": "polyglot_cli_app",
+  "concept": "Polyglot CLI assembler: binds an app's target_language (harvested from the request) to whichever library vial implements_language it, then assembles that library's program body under its own comment banner. Mentions no concrete language — new languages are added purely by dropping in a library vial.",
+  "rules": [
+    {
+      "name": "bind-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_language", "?lib"]
+    },
+    {
+      "name": "assemble-polyglot-random-cli",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "random_generation"],
+        ["?app", "uses_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_random_cli", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    }
+  ],
+  "evidence": ["Language-agnostic program assembly: capability/provider binding over target_language"]
+}
