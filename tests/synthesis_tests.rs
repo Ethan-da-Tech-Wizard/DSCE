@@ -48,6 +48,7 @@ fn synthesis_kb_loads_completely() {
             "mvc",
             "node_js_runtime",
             "polyglot_cli_app",
+            "polyglot_db_app",
             "polyglot_gui_app",
             "polyglot_web_app",
             "pygame_graphics",
@@ -280,9 +281,16 @@ fn go_random_cli_synthesis() {
 
 #[test]
 fn sql_random_synthesis() {
-    let code = code_with_banner("Write a random number generator in SQL", "(SQL)");
-    assert!(code.starts_with("-- assembled"));
-    assert!(code.contains("SELECT (abs(random()) % 100) + 1"));
+    let codes = assembled_codes("Write a random number generator in SQL");
+    let mut sql_found = false;
+    for code in &codes {
+        if code.starts_with("-- assembled by the DSCE polyglot assembler (SQL)")
+            && code.contains("SELECT (abs(random()) % 100) + 1")
+        {
+            sql_found = true;
+        }
+    }
+    assert!(sql_found, "SQL random program was not assembled by the engine");
 }
 
 #[test]
@@ -442,4 +450,25 @@ fn polyglot_web_app_synthesis_go() {
     let code = code_with_banner("Make a web server in Go", "Go");
     assert!(code.contains("net/http"));
     assert!(code.contains("ListenAndServe"));
+}
+
+#[test]
+fn polyglot_db_app_synthesis_python() {
+    let code = code_with_banner("Make a database app in Python", "Python");
+    assert!(code.contains("import sqlite3"));
+    assert!(code.contains("sqlite3.connect"));
+}
+
+#[test]
+fn polyglot_db_app_synthesis_cpp() {
+    let code = code_with_banner("Make a database app in C++", "C++");
+    assert!(code.contains("#include <sqlite3.h>"));
+    assert!(code.contains("sqlite3_open"));
+}
+
+#[test]
+fn polyglot_db_app_synthesis_sql() {
+    let code = code_with_banner("Make a database app in SQL", "SQL");
+    assert!(code.contains("CREATE TABLE users"));
+    assert!(code.contains("INSERT INTO users"));
 }

@@ -14,6 +14,7 @@
     ["go_std", "code_banner", "// assembled by the DSCE polyglot assembler (Go)\n"],
     ["go_std", "code_random_cli", "package main\n\nimport (\n\t\"fmt\"\n\t\"math/rand\"\n)\n\nfunc main() {\n\tfmt.Println(rand.Intn(100) + 1)\n}\n"],
     ["go_std", "code_gui_body", "package main\nimport \"fmt\"\nfunc main() {\n\tfmt.Println(\"+----------------------------+\")\n\tfmt.Println(\"|      Go Terminal GUI       |\")\n\tfmt.Println(\"+----------------------------+\")\n\tfmt.Println(\"| Hello from Go GUI!         |\")\n\tfmt.Println(\"+----------------------------+\")\n}\n"],
-    ["go_std", "code_web_body", "package main\nimport (\n\t\"fmt\"\n\t\"net/http\"\n)\nfunc main() {\n\thttp.HandleFunc(\"/\", func(w http.ResponseWriter, r *http.Request) {\n\t\tfmt.Fprint(w, \"Hello from Go Web Server!\")\n\t})\n\tfmt.Println(\"Serving on port 8080...\")\n\thttp.ListenAndServe(\"127.0.0.1:8080\", nil)\n}\n"]
+    ["go_std", "code_web_body", "package main\nimport (\n\t\"fmt\"\n\t\"net/http\"\n)\nfunc main() {\n\thttp.HandleFunc(\"/\", func(w http.ResponseWriter, r *http.Request) {\n\t\tfmt.Fprint(w, \"Hello from Go Web Server!\")\n\t})\n\tfmt.Println(\"Serving on port 8080...\")\n\thttp.ListenAndServe(\"127.0.0.1:8080\", nil)\n}\n"],
+    ["go_std", "code_db_body", "package main\nimport \"fmt\"\nfunc main() {\n\tdb := []string{\"Alice\"}\n\tfmt.Println(\"Query users:\", db)\n}\n"]
   ]
 }
