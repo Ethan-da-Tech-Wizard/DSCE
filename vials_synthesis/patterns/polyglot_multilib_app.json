@@ -1,0 +1,72 @@
+{
+  "id": "polyglot_multilib_app",
+  "concept": "Stitches together multiple requested Python libraries into a single rationalized pipeline.",
+  "rules": [
+    {
+      "name": "bind-lib-1",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "data_manipulation"]
+      ],
+      "conclusion": ["?app", "uses_lib_1", "pandas"]
+    },
+    {
+      "name": "bind-lib-2",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "numerical_arrays"]
+      ],
+      "conclusion": ["?app", "uses_lib_2", "numpy"]
+    },
+    {
+      "name": "bind-lib-3",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "machine_learning"]
+      ],
+      "conclusion": ["?app", "uses_lib_3", "scikit_learn"]
+    },
+    {
+      "name": "bind-lib-4",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "http_requests"]
+      ],
+      "conclusion": ["?app", "uses_lib_4", "requests"]
+    },
+    {
+      "name": "assemble-multilib-python-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "lang_python"],
+        ["?app", "needs", "multilib_suite"],
+        
+        ["?app", "uses_lib_1", "?l1"],
+        ["?l1", "code_import", "?import1"],
+        ["?l1", "code_init", "?init1"],
+        ["?l1", "code_process", "?process1"],
+        ["?l1", "code_output", "?output1"],
+        
+        ["?app", "uses_lib_2", "?l2"],
+        ["?l2", "code_import", "?import2"],
+        ["?l2", "code_init", "?init2"],
+        ["?l2", "code_process", "?process2"],
+        ["?l2", "code_output", "?output2"],
+        
+        ["?app", "uses_lib_3", "?l3"],
+        ["?l3", "code_import", "?import3"],
+        ["?l3", "code_init", "?init3"],
+        ["?l3", "code_process", "?process3"],
+        ["?l3", "code_output", "?output3"],
+        
+        ["?app", "uses_lib_4", "?l4"],
+        ["?l4", "code_import", "?import4"],
+        ["?l4", "code_init", "?init4"],
+        ["?l4", "code_process", "?process4"],
+        ["?l4", "code_output", "?output4"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?import1 + ?import2 + ?import3 + ?import4 + ?init1 + ?init2 + ?init3 + ?init4 + ?process1 + ?process2 + ?process3 + ?process4 + ?output1 + ?output2 + ?output3 + ?output4"
+    }
+  ]
+}

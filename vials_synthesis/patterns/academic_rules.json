@@ -1,0 +1,70 @@
+{
+  "id": "academic_rules",
+  "concept": "Academic design selection rules matching user application needs to advanced ODS structures, SICP evaluators, kernel patterns, and GoF design patterns.",
+  "rules": [
+    {
+      "name": "recommend-treap",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "randomized_bst"]
+      ],
+      "conclusion": ["?app", "recommended_structure", "treap"]
+    },
+    {
+      "name": "recommend-avl",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "strict_height_balance"]
+      ],
+      "conclusion": ["?app", "recommended_structure", "avl_tree"]
+    },
+    {
+      "name": "recommend-metacircular-evaluator",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "eval_apply_loop"]
+      ],
+      "conclusion": ["?app", "recommended_evaluator", "metacircular_evaluator"]
+    },
+    {
+      "name": "recommend-lazy-stream",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "delayed_evaluation"]
+      ],
+      "conclusion": ["?app", "recommended_evaluator", "lazy_stream"]
+    },
+    {
+      "name": "recommend-intrusive-list",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "intrusive_linked_list"]
+      ],
+      "conclusion": ["?app", "recommended_kernel", "intrusive_linked_list"]
+    },
+    {
+      "name": "recommend-circular-kfifo",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "lockless_ring_buffer"]
+      ],
+      "conclusion": ["?app", "recommended_kernel", "circular_buffer_kfifo"]
+    },
+    {
+      "name": "recommend-strategy-pattern",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "decouple_algorithm_from_client"]
+      ],
+      "conclusion": ["?app", "recommended_pattern", "strategy_pattern"]
+    },
+    {
+      "name": "recommend-observer-pattern",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "decoupled_pub_sub"]
+      ],
+      "conclusion": ["?app", "recommended_pattern", "observer_pattern"]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "polyglot_multilang_app",
+  "concept": "Multi-language app assembler: compiles a tool that uses a Backend language (Go, Python, C++, Rust, C) and a Frontend language (JavaScript/Node.js).",
+  "rules": [
+    {
+      "name": "bind-backend-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "backend_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_backend_library", "?lib"]
+    },
+    {
+      "name": "bind-frontend-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "frontend_language", "lang_javascript"],
+        ["?lib", "implements_language", "lang_javascript"]
+      ],
+      "conclusion": ["?app", "uses_frontend_library", "?lib"]
+    },
+    {
+      "name": "assemble-multilang-tool",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "multilang_tool"],
+        ["?app", "uses_backend_library", "?backLib"],
+        ["?backLib", "code_banner", "?backBanner"],
+        ["?backLib", "code_web_body", "?backBody"],
+        ["?app", "uses_frontend_library", "?frontLib"],
+        ["?frontLib", "code_banner", "?frontBanner"],
+        ["?frontLib", "code_gui_body", "?frontBody"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?backBanner + ?backBody + '\\n\\n' + ?frontBanner + ?frontBody"
+    }
+  ],
+  "evidence": ["Multi-language architectural model: separate backend and frontend runtime environments bound together"]
+}

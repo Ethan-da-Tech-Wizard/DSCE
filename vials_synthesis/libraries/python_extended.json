@@ -1,0 +1,48 @@
+{
+  "id": "python_extended",
+  "concept": "Extended Python libraries: Pandas, NumPy, Scikit-Learn, Requests, Matplotlib.",
+  "confidence": 1.0,
+  "evidence": [
+    "Pandas Documentation",
+    "NumPy Documentation",
+    "Scikit-Learn Documentation",
+    "Requests Documentation",
+    "Matplotlib Documentation"
+  ],
+  "facts": [
+    ["pandas", "is_a", "framework"],
+    ["pandas", "provides", "data_manipulation"],
+    ["pandas", "code_import", "import pandas as pd\n"],
+    ["pandas", "code_init", "# 1. Pandas: Load structured data into a DataFrame\ndata = {'Name': ['Alice', 'Bob'], 'Value': [100, 200]}\ndf = pd.DataFrame(data)\n"],
+    ["pandas", "code_process", "# 2. Pandas: Compute scaled metrics\ndf['Scaled'] = df['Value'] * 1.5\n"],
+    ["pandas", "code_output", "# 3. Pandas: Output table summary\nprint(df.to_string())\n"],
+
+    ["numpy", "is_a", "framework"],
+    ["numpy", "provides", "numerical_arrays"],
+    ["numpy", "code_import", "import numpy as np\n"],
+    ["numpy", "code_init", "# 1. NumPy: Define raw matrix buffers\nmatrix = np.array([[1, 2], [3, 4]])\n"],
+    ["numpy", "code_process", "# 2. NumPy: Compute eigenvalues\neigenvals = np.linalg.eigvals(matrix)\n"],
+    ["numpy", "code_output", "# 3. NumPy: Print eigenvalue distribution\nprint('Eigenvalues:', eigenvals)\n"],
+
+    ["scikit_learn", "is_a", "framework"],
+    ["scikit_learn", "provides", "machine_learning"],
+    ["scikit_learn", "code_import", "from sklearn.linear_model import LinearRegression\n"],
+    ["scikit_learn", "code_init", "# 1. Scikit-Learn: Initialize regressor model\nmodel = LinearRegression()\n"],
+    ["scikit_learn", "code_process", "# 2. Scikit-Learn: Fit training inputs\nmodel.fit([[1], [2]], [10, 20])\n"],
+    ["scikit_learn", "code_output", "# 3. Scikit-Learn: Predict new coefficients\nprint('Prediction for 3:', model.predict([[3]]))\n"],
+
+    ["requests", "is_a", "framework"],
+    ["requests", "provides", "http_requests"],
+    ["requests", "code_import", "import requests\n"],
+    ["requests", "code_init", "# 1. Requests: Initialize API parameters\napi_url = 'https://api.github.com'\n"],
+    ["requests", "code_process", "# 2. Requests: Execute GET call\nresp = requests.get(api_url)\n"],
+    ["requests", "code_output", "# 3. Requests: Print HTTP response status code\nprint('HTTP Response:', resp.status_code)\n"],
+
+    ["matplotlib", "is_a", "framework"],
+    ["matplotlib", "provides", "data_plotting"],
+    ["matplotlib", "code_import", "import matplotlib.pyplot as plt\n"],
+    ["matplotlib", "code_init", "# 1. Matplotlib: Initialize figure axes\nfig, ax = plt.subplots()\n"],
+    ["matplotlib", "code_process", "# 2. Matplotlib: Plot coordinates\nax.plot([1, 2, 3], [10, 20, 15])\n"],
+    ["matplotlib", "code_output", "# 3. Matplotlib: Save visual rendering\nfig.savefig('plot.png')\n"]
+  ]
+}

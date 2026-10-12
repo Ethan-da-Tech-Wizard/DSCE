@@ -1,0 +1,129 @@
+{
+  "id": "polyglot_game_app",
+  "concept": "Polyglot GUI game assembler: binds an app's target_language to whichever library vial implements it, and concatenates the language banner and the graphical/arcade game code block with in-depth instruction comments.",
+  "rules": [
+    {
+      "name": "bind-game-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_game_language", "?lib"]
+    },
+    {
+      "name": "assemble-polyglot-game-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "gui_game"],
+        ["?app", "uses_game_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_game_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-complex-game-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "lang_python"],
+        ["?app", "game_tier", "mid_tier"],
+        ["?app", "needs", "twin_stick_combat"],
+        ["?app", "needs", "tower_defense_grid"],
+        ["?app", "needs", "wave_spawning"],
+        ["?app", "needs", "procedural_generation"],
+        
+        ["?app", "weapon_type", "?wType"],
+        ["?app", "move_modifier", "?mType"],
+        ["?app", "tower_type", "?tType"],
+        
+        ["?lib", "implements_language", "lang_python"],
+        ["?lib", "code_import", "?import_base"],
+        ["?lib", "code_init", "?init_base"],
+        
+        ["?lib", "combat_code_import", "?combImp"],
+        ["?lib", "combat_code_init", "?combIni"],
+        ["?lib", "combat_code_update_base", "?combUpdBase"],
+        ["?lib", "combat_code_update_bullets", "?combUpdBullets"],
+        ["?lib", "combat_code_draw", "?combDrw"],
+        
+        ["?lib", "?wType", "?shootCode"],
+        ["?lib", "?mType", "?moveCode"],
+        ["?lib", "?tType", "?towerDrawCode"],
+        
+        ["?lib", "tower_code_init", "?towerIni"],
+        ["?lib", "tower_code_update", "?towerUpd"],
+        
+        ["?lib", "wave_code_init", "?waveIni"],
+        ["?lib", "wave_code_update", "?waveUpd"],
+        ["?lib", "wave_code_draw", "?waveDrw"],
+        
+        ["?lib", "procedural_code_init", "?procIni"],
+        ["?lib", "procedural_code_update", "?procUpd"],
+        ["?lib", "procedural_code_draw", "?procDrw"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?import_base + ?combImp + ?init_base + ?combIni + ?towerIni + ?waveIni + ?procIni + \"def update_game():\\n    \" + ?moveCode + \"    \" + ?combUpdBase + ?shootCode + \"    \" + ?combUpdBullets + \"    \" + ?towerUpd + \"    \" + ?waveUpd + \"    \" + ?procUpd + \"\\n\\ndef draw_game():\\n    screen.fill((10, 10, 20))\\n    \" + ?procDrw + \"    \" + ?towerDrawCode + \"    \" + ?waveDrw + \"    \" + ?combDrw + \"\\n\\n# Main game loop\\nrunning = True\\nwhile running:\\n    for event in pygame.event.get():\\n        if event.type == pygame.QUIT:\\n            running = False\\n    update_game()\\n    draw_game()\\n    pygame.display.flip()\\n    clock.tick(60)\\npygame.quit()\\n\""
+    },
+    {
+      "name": "assemble-neon-rift-game",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "lang_python"],
+        ["?app", "game_tier", "high_tier"],
+        ["?app", "needs", "twin_stick_combat"],
+        ["?app", "needs", "tower_defense_grid"],
+        ["?app", "needs", "wave_spawning"],
+        ["?app", "needs", "procedural_generation"],
+        ["?app", "needs", "boss_ai_fsm"],
+        ["?app", "needs", "status_effect_ticker"],
+        ["?app", "needs", "currency_economy"],
+        
+        ["?app", "weapon_type", "?wType"],
+        ["?app", "move_modifier", "?mType"],
+        ["?app", "tower_type", "?tType"],
+        
+        ["?lib", "implements_language", "lang_python"],
+        ["?lib", "code_import", "?import_base"],
+        ["?lib", "code_init", "?init_base"],
+        
+        ["?lib", "combat_code_import", "?combImp"],
+        ["?lib", "combat_code_init", "?combIni"],
+        ["?lib", "combat_code_update_base", "?combUpdBase"],
+        ["?lib", "combat_code_update_bullets", "?combUpdBullets"],
+        ["?lib", "combat_code_draw", "?combDrw"],
+        
+        ["?lib", "?wType", "?shootCode"],
+        ["?lib", "?mType", "?moveCode"],
+        ["?lib", "?tType", "?towerDrawCode"],
+        
+        ["?lib", "tower_code_init", "?towerIni"],
+        ["?lib", "tower_code_update", "?towerUpd"],
+        
+        ["?lib", "wave_code_init", "?waveIni"],
+        ["?lib", "wave_code_update", "?waveUpd"],
+        ["?lib", "wave_code_draw", "?waveDrw"],
+        
+        ["?lib", "procedural_code_init", "?procIni"],
+        ["?lib", "procedural_code_update", "?procUpd"],
+        ["?lib", "procedural_code_draw", "?procDrw"],
+
+        ["?lib", "boss_code_init", "?bossIni"],
+        ["?lib", "boss_code_update", "?bossUpd"],
+        ["?lib", "boss_code_draw", "?bossDrw"],
+
+        ["?lib", "status_code_init", "?statusIni"],
+        ["?lib", "status_code_update", "?statusUpd"],
+        ["?lib", "status_code_draw", "?statusDrw"],
+
+        ["?lib", "economy_code_init", "?econIni"],
+        ["?lib", "economy_code_update", "?econUpd"],
+        ["?lib", "economy_code_draw", "?econDrw"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?import_base + ?combImp + ?init_base + ?combIni + ?towerIni + ?waveIni + ?procIni + ?bossIni + ?statusIni + ?econIni + \"def update_game():\\n    \" + ?moveCode + \"    \" + ?combUpdBase + ?shootCode + \"    \" + ?combUpdBullets + \"    \" + ?towerUpd + \"    \" + ?waveUpd + \"    \" + ?procUpd + \"    \" + ?bossUpd + \"    \" + ?statusUpd + \"    \" + ?econUpd + \"\\n\\ndef draw_game():\\n    screen.fill((10, 10, 20))\\n    \" + ?procDrw + \"    \" + ?towerDrawCode + \"    \" + ?waveDrw + \"    \" + ?combDrw + \"    \" + ?bossDrw + \"    \" + ?statusDrw + \"    \" + ?econDrw + \"\\n\\n# Main game loop\\nrunning = True\\nwhile running:\\n    for event in pygame.event.get():\\n        if event.type == pygame.QUIT:\\n            running = False\\n    update_game()\\n    draw_game()\\n    pygame.display.flip()\\n    clock.tick(60)\\npygame.quit()\\n\""
+    }
+  ],
+  "evidence": ["Language-agnostic interactive GUI game assembly: capability/provider binding over target_language"]
+}

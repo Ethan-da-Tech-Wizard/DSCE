@@ -1,0 +1,82 @@
+{
+  "id": "python_gui_libraries",
+  "concept": "Comprehensive facts and boilerplates for Python's top 25 GUI, TUI, game, and multimedia toolkits.",
+  "facts": [
+    ["pyside6", "implements_language", "lang_python"],
+    ["pyside6", "code_init", "import sys\nfrom PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget\n\nclass MainWindow(QMainWindow):\n    def __init__(self):\n        super().__init__()\n        self.setWindowTitle('PySide6 Desktop Application')\n        self.resize(800, 600)\n        \n        widget = QWidget()\n        layout = QVBoxLayout()\n        label = QLabel('Professional PySide6 Window')\n        layout.addWidget(label)\n        widget.setLayout(layout)\n        self.setCentralWidget(widget)\n\nif __name__ == '__main__':\n    app = QApplication(sys.argv)\n    window = MainWindow()\n    window.show()\n    sys.exit(app.exec())\n"],
+
+    ["pyqt6", "implements_language", "lang_python"],
+    ["pyqt6", "code_init", "import sys\nfrom PyQt6.QtWidgets import QApplication, QMainWindow, QLabel\n\nclass MainWindow(QMainWindow):\n    def __init__(self):\n        super().__init__()\n        self.setWindowTitle('PyQt6 Desktop Application')\n        self.resize(800, 600)\n        self.label = QLabel('Commercial-quality PyQt6 Layout', self)\n        self.setCentralWidget(self.label)\n\nif __name__ == '__main__':\n    app = QApplication(sys.argv)\n    window = MainWindow()\n    window.show()\n    sys.exit(app.exec())\n"],
+
+    ["wxpython", "implements_language", "lang_python"],
+    ["wxpython", "code_init", "import wx\n\nclass MainFrame(wx.Frame):\n    def __init__(self):\n        super().__init__(parent=None, title='wxPython Native Application', size=(800, 600))\n        panel = wx.Panel(self)\n        sizer = wx.BoxSizer(wx.VERTICAL)\n        text = wx.StaticText(panel, label='Native Desktop Widget Layout')\n        sizer.Add(text, 0, wx.ALL | wx.CENTER, 10)\n        panel.SetSizer(sizer)\n        self.Show()\n\nif __name__ == '__main__':\n    app = wx.App()\n    frame = MainFrame()\n    app.MainLoop()\n"],
+
+    ["customtkinter", "implements_language", "lang_python"],
+    ["customtkinter", "code_init", "import customtkinter as ctk\n\nctk.set_appearance_mode('dark')\nctk.set_default_color_theme('blue')\n\nclass App(ctk.CTk):\n    def __init__(self):\n        super().__init__()\n        self.title('CustomTkinter Modern Application')\n        self.geometry('800x600')\n        self.label = ctk.CTkLabel(self, text='Styled Modern Button/Switch Interface', font=('Arial', 20))\n        self.label.pack(pady=20)\n        self.button = ctk.CTkButton(self, text='Click Me')\n        self.button.pack(pady=10)\n\nif __name__ == '__main__':\n    app = App()\n    app.mainloop()\n"],
+
+    ["dearpygui", "implements_language", "lang_python"],
+    ["dearpygui", "code_init", "import dearpygui.dearpygui as dpg\n\ndpg.create_context()\ndpg.create_viewport(title='Dear PyGui Live Dashboard', width=800, height=600)\n\nwith dpg.window(label='Real-Time Graph Panels', width=780, height=560):\n    dpg.add_text('GPU-Accelerated Visualizer Log')\n    dpg.add_button(label='Trigger Action')\n\ndpg.setup_dearpygui()\ndpg.show_viewport()\ndpg.start_dearpygui()\ndpg.destroy_context()\n"],
+
+    ["flet", "implements_language", "lang_python"],
+    ["flet", "code_init", "import flet as ft\n\ndef main(page: ft.Page):\n    page.title = 'Flet Flutter-Style Dashboard'\n    page.vertical_alignment = ft.MainAxisAlignment.CENTER\n    page.add(\n        ft.Row(\n            [\n                ft.Text('Modern Responsive Components', size=24),\n            ],\n            alignment=ft.MainAxisAlignment.CENTER,\n        )\n    )\n\nif __name__ == '__main__':\n    ft.app(target=main)\n"],
+
+    ["nicegui", "implements_language", "lang_python"],
+    ["nicegui", "code_init", "from nicegui import ui\n\nui.label('Browser-Rendered Admin Dashboard Panel')\nui.button('Perform Update', on_click=lambda: ui.notify('Updated successfully'))\n\nui.run(port=8080, reload=False)\n"],
+
+    ["tkinter", "implements_language", "lang_python"],
+    ["tkinter", "code_init", "import tkinter as tk\n\nroot = tk.Tk()\nroot.title('Standard Tkinter Application')\nroot.geometry('800x600')\nlabel = tk.Label(root, text='Tkinter Standard Layout')\nlabel.pack(pady=20)\nroot.mainloop()\n"],
+
+    ["ttkbootstrap", "implements_language", "lang_python"],
+    ["ttkbootstrap", "code_init", "import ttkbootstrap as tb\n\napp = tb.Window(themename='darkly', title='ttkbootstrap Dashboard')\napp.geometry('800x600')\nlabel = tb.Label(app, text='Bootstrap-inspired Dark Theme', font=('Helvetica', 18))\nlabel.pack(pady=20)\napp.mainloop()\n"],
+
+    ["pysimplegui", "implements_language", "lang_python"],
+    ["pysimplegui", "code_init", "import PySimpleGUI as sg\n\nlayout = [\n    [sg.Text('PySimpleGUI Interface layout')],\n    [sg.Button('OK'), sg.Button('Exit')]\n]\nwindow = sg.Window('Simple Desktop Dialog', layout, size=(800, 600))\nwhile True:\n    event, values = window.read()\n    if event in (sg.WINDOW_CLOSED, 'Exit'):\n        break\nwindow.close()\n"],
+
+    ["kivy", "implements_language", "lang_python"],
+    ["kivy", "code_init", "from kivy.app import App\nfrom kivy.uix.label import Label\n\nclass TouchApp(App):\n    def build(self):\n        return Label(text='Kivy Touchscreen and Mobile Interface')\n\nif __name__ == '__main__':\n    TouchApp().run()\n"],
+
+    ["kivymd", "implements_language", "lang_python"],
+    ["kivymd", "code_init", "from kivymd.app import MDApp\nfrom kivymd.uix.label import MDLabel\n\nclass MaterialApp(MDApp):\n    def build(self):\n        return MDLabel(text='Material Design Mobile Application', halign='center')\n\nif __name__ == '__main__':\n    MaterialApp().run()\n"],
+
+    ["toga", "implements_language", "lang_python"],
+    ["toga", "code_init", "import toga\nfrom toga.style import Pack\nfrom toga.style.pack import COLUMN, ROW\n\ndef build(app):\n    box = toga.Box(style=Pack(direction=COLUMN))\n    label = toga.Label('BeeWare Native Toga layout', style=Pack(padding=(0, 10)))\n    box.add(label)\n    return box\n\nif __name__ == '__main__':\n    app = toga.App('Toga Native App', 'org.beeware.toga', startup=build)\n    # Note: normally started via app.main_loop()\n"],
+
+    ["textual", "implements_language", "lang_python"],
+    ["textual", "code_init", "from textual.app import App, ComposeResult\nfrom textual.widgets import Header, Footer, Static\n\nclass TuiApp(App):\n    BINDINGS = [('d', 'toggle_dark', 'Toggle dark mode')]\n    def compose(self) -> ComposeResult:\n        yield Header()\n        yield Static('CSS-styled Textual Terminal UI')\n        yield Footer()\n\nif __name__ == '__main__':\n    app = TuiApp()\n    app.run()\n"],
+
+    ["rich", "implements_language", "lang_python"],
+    ["rich", "code_init", "from rich.console import Console\nfrom rich.table import Table\n\nconsole = Console()\ntable = Table(title='Polished Terminal CLI Output')\ntable.add_column('Task', style='cyan')\ntable.add_column('Status', style='green')\ntable.add_row('Knowledge Base Loading', 'Complete')\nconsole.print(table)\n"],
+
+    ["prompt_toolkit", "implements_language", "lang_python"],
+    ["prompt_toolkit", "code_init", "from prompt_toolkit import prompt\nfrom prompt_toolkit.completion import WordCompleter\n\ncompleter = WordCompleter(['status', 'vials', 'synthesis', 'exit'])\ntext = prompt('DSCE Console> ', completer=completer)\nprint(f'Entered: {text}')\n"],
+
+    ["pygame_ce", "implements_language", "lang_python"],
+    ["pygame_ce", "code_init", "import pygame\npygame.init()\nscreen = pygame.display.set_mode((800, 600))\nclock = pygame.time.Clock()\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n    screen.fill((10, 10, 20))\n    pygame.display.flip()\n    clock.tick(60)\npygame.quit()\n"],
+
+    ["arcade", "implements_language", "lang_python"],
+    ["arcade", "code_init", "import arcade\n\nclass Game(arcade.Window):\n    def __init__(self):\n        super().__init__(800, 600, 'OpenGL Accelerated Arcade App')\n    def on_draw(self):\n        self.clear()\n        arcade.draw_text('Arcade Visualizer', 400, 300, arcade.color.AMAZON, 24, anchor_x='center')\n\nif __name__ == '__main__':\n    window = Game()\n    arcade.run()\n"],
+
+    ["pyglet", "implements_language", "lang_python"],
+    ["pyglet", "code_init", "import pyglet\n\nwindow = pyglet.window.Window(800, 600, 'Pyglet multimedia/OpenGL Window')\nlabel = pyglet.text.Label('Low-Level Media Loop', x=window.width//2, y=window.height//2, anchor_x='center', anchor_y='center')\n\n@window.event\ndef on_draw():\n    window.clear()\n    label.draw()\n\nif __name__ == '__main__':\n    pyglet.app.run()\n"],
+
+    ["panda3d", "implements_language", "lang_python"],
+    ["panda3d", "code_init", "from direct.showbase.ShowBase import ShowBase\n\nclass GameApp(ShowBase):\n    def __init__(self):\n        super().__init__()\n        # Initialize 3D scene elements here\n\nif __name__ == '__main__':\n    app = GameApp()\n    app.run()\n"],
+
+    ["gtk4", "implements_language", "lang_python"],
+    ["gtk4", "code_init", "import gi\ngi.require_version('Gtk', '4.0')\nfrom gi.repository import Gtk\n\ndef on_activate(app):\n    win = Gtk.ApplicationWindow(application=app)\n    win.set_title('GTK4 GNOME Native Application')\n    win.set_default_size(800, 600)\n    label = Gtk.Label(label='GTK4 Linux Widget Layout')\n    win.set_child(label)\n    win.present()\n\napp = Gtk.Application(application_id='org.gnome.GTKApp')\napp.connect('activate', on_activate)\n# Note: normally ran via app.run([])\n"],
+
+    ["qml", "implements_language", "lang_python"],
+    ["qml", "code_init", "import sys\nfrom PySide6.QtGui import QGuiApplication\nfrom PySide6.QtQml import QQmlApplicationEngine\n\n# QML styling markup is declarative\nqml_data = b'''\nimport QtQuick 2.15\nimport QtQuick.Window 2.15\nWindow {\n    width: 800\n    height: 600\n    visible: true\n    title: \"QML GPU-Accelerated Responsive Layout\"\n}\n'''\n\nif __name__ == '__main__':\n    app = QGuiApplication(sys.argv)\n    engine = QQmlApplicationEngine()\n    engine.loadData(qml_data)\n    sys.exit(app.exec())\n"],
+
+    ["pywebview", "implements_language", "lang_python"],
+    ["pywebview", "code_init", "import webview\n\nif __name__ == '__main__':\n    # Display HTML inside a native window wrapper\n    webview.create_window('PyWebView Hybrid Console', html='<h1>HTML5 Responsive Layout Canvas</h1>')\n    webview.start()\n"],
+
+    ["eel", "implements_language", "lang_python"],
+    ["eel", "code_init", "import eel\n\n# Eel connects python backend to HTML/JS frontend\n# eel.init('web')\n# eel.start('index.html', size=(800, 600))\n"],
+
+    ["enaml", "implements_language", "lang_python"],
+    ["enaml", "code_init", "import enaml\nfrom enaml.qt.qt_application import QtApplication\n\n# enaml templates define declarative layout models backed by Qt\n# with enaml.imports():\n#     from main_view import MainView\n"]
+  ],
+  "evidence": ["Python GUI/TUI packaging guidelines and framework reference docs"],
+  "confidence": 0.99
+}

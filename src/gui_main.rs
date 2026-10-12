@@ -108,7 +108,12 @@ fn main() -> Result<(), slint::PlatformError> {
             if in_answers && !line.trim().is_empty() {
                 // Determine depth based on branch characters
                 let branch_chars = line.chars().take_while(|c| *c == '├' || *c == '─' || *c == '│' || *c == '└' || c.is_whitespace()).count();
-                let text = line[branch_chars..].trim().to_string();
+                let branch_bytes = line.char_indices()
+                    .skip_while(|(_, c)| *c == '├' || *c == '─' || *c == '│' || *c == '└' || c.is_whitespace())
+                    .map(|(idx, _)| idx)
+                    .next()
+                    .unwrap_or(line.len());
+                let text = line[branch_bytes..].trim().to_string();
                 let is_rule = text.contains("[by rule");
                 
                 ui_proof.push(ProofLine {
@@ -135,7 +140,25 @@ fn main() -> Result<(), slint::PlatformError> {
         }
 
         // Auto-detect language extension
-        let lang_lower = lang.to_lowercase();
+        let mut lang_lower = lang.to_lowercase();
+        if lang_lower == "auto-detect" {
+            if code_str.contains("assembled by the DSCE polyglot assembler (Go)") || code_str.contains("package main") {
+                lang_lower = "go".to_string();
+            } else if code_str.contains("assembled by the DSCE polyglot assembler (Rust)") || code_str.contains("fn main()") {
+                lang_lower = "rust".to_string();
+            } else if code_str.contains("assembled by the DSCE polyglot assembler (C++)") || code_str.contains("#include <iostream>") {
+                lang_lower = "cpp".to_string();
+            } else if code_str.contains("assembled by the DSCE polyglot assembler (C)") || code_str.contains("#include <stdio.h>") {
+                lang_lower = "c".to_string();
+            } else if code_str.contains("assembled by the DSCE polyglot assembler (JavaScript)") || code_str.contains("require(") {
+                lang_lower = "js".to_string();
+            } else if code_str.contains("CREATE TABLE") || code_str.contains("SELECT") {
+                lang_lower = "sql".to_string();
+            } else {
+                lang_lower = "python".to_string();
+            }
+        }
+
         let (file_ext, cmd_name, cmd_args) = if lang_lower.contains("python") {
             ("py", "python3", vec![])
         } else if lang_lower.contains("go") {
@@ -143,10 +166,10 @@ fn main() -> Result<(), slint::PlatformError> {
         } else if lang_lower.contains("javascript") || lang_lower.contains("js") || lang_lower.contains("node") {
             ("js", "node", vec![])
         } else if lang_lower.contains("rust") {
-            ("rs", "rustc", vec![]) // will compile and run manually
+            ("rs", "rustc", vec![])
         } else if lang_lower.contains("c++") || lang_lower.contains("cpp") {
             ("cpp", "g++", vec![])
-        } else if lang_lower.contains("c") {
+        } else if lang_lower == "c" { // Exact match to avoid substring collision with "detect"
             ("c", "gcc", vec![])
         } else if lang_lower.contains("sql") {
             ("sql", "sqlite3", vec![":memory:"])
