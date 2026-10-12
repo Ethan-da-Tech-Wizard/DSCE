@@ -9,6 +9,8 @@
 | [Cargo.lock](../../Cargo.lock) | Dependency lockfile recording resolved package versions and integrity/source metadata; update through the project’s package manager. |
 | [Cargo.toml](../../Cargo.toml) | Configuration or build metadata for Cargo; read alongside the application or tool that loads it. |
 | [LICENSE](../../LICENSE) | Preserved license, copyright, or attribution terms; read the full text before reusing the covered component. |
+| [LICENSES/GCIDE-JSON-GPL-2.0.txt](../../LICENSES/GCIDE-JSON-GPL-2.0.txt) | Reference notes for GCIDE JSON GPL 2.0: GNU GENERAL PUBLIC LICENSE Version 2, June 1991. |
+| [LICENSES/GCIDE-UPSTREAM-GPL-3.0.txt](../../LICENSES/GCIDE-UPSTREAM-GPL-3.0.txt) | Reference notes for GCIDE UPSTREAM GPL 3.0: GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007. |
 | [NOTICE](../../NOTICE) | Preserved license, copyright, or attribution terms; read the full text before reusing the covered component. |
 | [PROJECT_NOTES.md](../../PROJECT_NOTES.md) | Preserved detailed setup, usage, architecture, and development notes from the earlier README. |
 | [README.md](../../README.md) | Project overview, current status, entry points, setup navigation, and documentation links. |
@@ -18,6 +20,7 @@
 | [docs/DESIGN.md](../../docs/DESIGN.md) | Documentation: DSCE Design Document. Covers 1. Motivation; 2. Core concepts; 2.1 Facts. |
 | [docs/FILE_GUIDE.md](../../docs/FILE_GUIDE.md) | Index of the complete tracked-file guide, with one entry for every file and links to the paginated descriptions. |
 | [docs/FRD.md](../../docs/FRD.md) | Documentation: DSCE Functional Requirements Document (FRD). Covers FR-1 Knowledge representation; FR-2 Query and matching; FR-3 Flood semantics. |
+| [docs/GCIDE_LICENSE.md](../../docs/GCIDE_LICENSE.md) | Preserved license, copyright, or attribution terms; read the full text before reusing the covered component. |
 | [docs/LICENSE_REVIEW.md](../../docs/LICENSE_REVIEW.md) | Original-code license, preserved component notices, dependency-license evidence, and unresolved distribution questions. |
 | [docs/MILESTONES.md](../../docs/MILESTONES.md) | Documentation: DSCE Milestones. Covers ✅ M0 — Reference prototype (this repository); M1 — Vials as data; M2 — Demand-driven flooding + the paper. |
 | [docs/PRD.md](../../docs/PRD.md) | Documentation: DSCE Product Requirements Document (PRD). Covers 1. Vision; 2. Target users; 3. Product principles. |

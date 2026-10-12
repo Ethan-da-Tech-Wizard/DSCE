@@ -23,7 +23,8 @@ Explicit knowledge containers and spreading activation assemble inspectable reas
 
 | Path | Role |
 | --- | --- |
-| [docs/](../docs/) | Project documentation, decisions, and reference material (13 tracked entries). |
+| [LICENSES/](../LICENSES/) | Component license texts (2 tracked entries). |
+| [docs/](../docs/) | Project documentation, decisions, and reference material (14 tracked entries). |
 | [dsce/](../dsce/) | Project-specific dsce components (9 tracked entries). |
 | [scripts/](../scripts/) | Build, launch, maintenance, and verification commands (5 tracked entries). |
 | [src/](../src/) | Application source and platform integration (14 tracked entries). |
@@ -32,7 +33,7 @@ Explicit knowledge containers and spreading activation assemble inspectable reas
 
 ## Scope
 
-The Python reference and Rust implementation are distinct entry points. The Slint GUI has its own licensing choices; the project Apache license does not replace them.
+The Python reference and Rust implementation are distinct entry points. The Slint GUI has its own licensing choices; the project Apache license does not replace them. The GCIDE-derived dictionary has separate GPL terms; docs/GCIDE_LICENSE.md records the source-version question and preserved license texts.
 
 ## Maintaining the guide
 

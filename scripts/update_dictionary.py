@@ -24,7 +24,7 @@ def download_and_format():
         "concept": "Collaborative International Dictionary of English (GCIDE)",
         "confidence": 1.0,
         "evidence": [
-            "GCIDE (GPL-3.0-or-later; see https://gcide.gnu.org.ua/license), parsed via aviaryan/gcide-dictionary-json"
+            "GCIDE-derived dictionary via aviaryan/gcide-dictionary-json; see docs/GCIDE_LICENSE.md for license texts and version provenance"
         ],
         "facts": []
     }

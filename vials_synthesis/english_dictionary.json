@@ -3,7 +3,7 @@
   "concept": "Collaborative International Dictionary of English (GCIDE)",
   "confidence": 1.0,
   "evidence": [
-    "GCIDE Public Domain Dictionary, parsed via aviaryan/gcide-dictionary-json"
+    "GCIDE-derived dictionary via aviaryan/gcide-dictionary-json; see docs/GCIDE_LICENSE.md for license texts and version provenance"
   ],
   "facts": [
     [
