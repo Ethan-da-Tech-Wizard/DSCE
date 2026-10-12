@@ -3,7 +3,7 @@ name = "dsce"
 version = "0.1.0"
 edition = "2021"
 description = "Deterministic Semantic Computation Engine — sand-and-vials spreading activation in Rust"
-license = "MIT"
+license = "Apache-2.0"
 
 [dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
