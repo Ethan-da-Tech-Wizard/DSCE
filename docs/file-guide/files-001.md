@@ -63,7 +63,6 @@
 | [tests/synthesis_tests.rs](../../tests/synthesis_tests.rs) | Test implementation for synthesis tests; defines `t`, `vials_dir`, `synthesize`, `synthesis_kb_loads_completely`, `library_vials_are_decoupled`, `flagship_request_assembles_full_program`, `tick` and 71 more symbols. |
 | [tests/test_engine.py](../../tests/test_engine.py) | Automated checks for engine. Defines `TestUnification`, `TestFlood`, `TestEngineBasics`. |
 | [tests/test_new_features.py](../../tests/test_new_features.py) | Automated checks for new features. Defines `TestConflicts`, `TestSpecificity`, `TestSqliteVialStore`. |
-| [vials_synthesis/english_dictionary.json](../../vials_synthesis/english_dictionary.json) | Structured english dictionary data or evidence; inspect its schema before changing consumers. |
 | [vials_synthesis/libraries/academic_concepts.json](../../vials_synthesis/libraries/academic_concepts.json) | Structured academic concepts data; top-level fields: `id`, `concept`, `confidence`, `evidence`, `facts`. |
 | [vials_synthesis/libraries/c_std.json](../../vials_synthesis/libraries/c_std.json) | Structured c std data; top-level fields: `id`, `concept`, `confidence`, `evidence`, `facts`. |
 | [vials_synthesis/libraries/cpp_std.json](../../vials_synthesis/libraries/cpp_std.json) | Structured cpp std data; top-level fields: `id`, `concept`, `confidence`, `evidence`, `facts`. |

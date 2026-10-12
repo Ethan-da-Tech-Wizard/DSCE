@@ -30,6 +30,10 @@ The owner selected MIT for previously unlicensed original code. Existing license
 
 Slint offers GPL and alternative licensing routes. The Rust GUI must comply with the specific selected Slint terms; the Python reference’s Apache-2.0 license does not settle that choice. See [Slint licensing](https://slint.dev/pricing). The GCIDE-derived dictionary is separately GPL-covered. The converted source carries GPL-2.0 text, while current GCIDE upstream specifies GPL-3.0-or-later; the exact source revision/version requires confirmation before bundling. See [dictionary provenance and preserved license texts](GCIDE_LICENSE.md). The dictionary is not public domain or Apache-only.
 
+## Dictionary data
+
+Run `python scripts/update_dictionary.py` to download and convert the dictionary for local use. The generated `vials_synthesis/english_dictionary.json` is excluded from current source tracking. Earlier commits contain a snapshot; preserve its GPL notices and confirm the exact version as described in [GCIDE_LICENSE.md](GCIDE_LICENSE.md).
+
 ## Remaining work before binary distribution
 
 No unresolved registry-license lookup remains in the listed package records. System packages, downloaded tools/models, optional plugins, release binaries, and externally obtained assets need a build-specific inventory. This source review is not a blanket legal certification or a claim that every release artifact has been audited.
