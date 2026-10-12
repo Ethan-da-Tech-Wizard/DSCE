@@ -161,6 +161,7 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
         "build_command",
         "run_command",
         "docs_url",
+        "maps_to_need",
     ] {
         engine.register_annotation(annotation);
     }

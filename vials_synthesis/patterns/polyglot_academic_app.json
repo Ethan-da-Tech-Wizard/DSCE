@@ -1,0 +1,42 @@
+{
+  "id": "polyglot_academic_app",
+  "concept": "Polyglot academic app assembler: binds an app's target_language and stitches together ODS, SICP, Kernel, and GoF patterns.",
+  "rules": [
+    {
+      "name": "bind-academic-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_academic_language", "?lib"]
+    },
+    {
+      "name": "assemble-polyglot-academic-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "academic_suite"],
+        ["?app", "uses_academic_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        
+        ["?app", "recommended_structure", "?struct"],
+        ["?struct", "code_slot", "?struct_code_slot"],
+        ["?lib", "?struct_code_slot", "?struct_code"],
+        
+        ["?app", "recommended_evaluator", "?evaluator"],
+        ["?evaluator", "code_slot", "?eval_code_slot"],
+        ["?lib", "?eval_code_slot", "?eval_code"],
+        
+        ["?app", "recommended_kernel", "?kernel"],
+        ["?kernel", "code_slot", "?kernel_code_slot"],
+        ["?lib", "?kernel_code_slot", "?kernel_code"],
+        
+        ["?app", "recommended_pattern", "?pattern"],
+        ["?pattern", "code_slot", "?pattern_code_slot"],
+        ["?lib", "?pattern_code_slot", "?pattern_code"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?struct_code + ?eval_code + ?kernel_code + ?pattern_code"
+    }
+  ]
+}

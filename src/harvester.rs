@@ -153,6 +153,9 @@ pub fn harvest_offline(request: &str) -> Harvest {
 
     let a = Term::str(app.clone());
     let mut triples: Vec<Fact> = vec![(a.clone(), Term::str("is_a"), Term::str("application"))];
+    for token in &tokens {
+        triples.push((a.clone(), Term::str("contains_token"), Term::str(token.clone())));
+    }
     let push = |fact: Fact, triples: &mut Vec<Fact>| {
         if !triples.contains(&fact) {
             triples.push(fact);
@@ -180,17 +183,163 @@ pub fn harvest_offline(request: &str) -> Harvest {
         push(needs("grid_layout"), &mut triples);
         push(needs("graphics"), &mut triples);
     }
-    if matches_any(&tokens, &["game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation", "gui", "tkinter", "pygame"]) {
+    if matches_any(&tokens, &[
+        "game", "games", "arcade", "draw", "display", "graphics", "render", "screen", "animation",
+        "gui", "tkinter", "pygame", "color", "colors", "flash", "flashing", "paint", "painting",
+        "drawing", "rendering", "shape", "shapes", "circle", "rect", "rectangle", "sprite", "sprites",
+        "font", "canvas", "view", "viewport", "visual", "visuals"
+    ]) {
         push(needs("graphics"), &mut triples);
     }
-    if matches_any(&tokens, &["gui", "window", "visual"]) {
+    if matches_any(&tokens, &["twin-stick", "combat", "shoot", "shooting", "projectile", "weapon"]) {
+        push(needs("twin_stick_combat"), &mut triples);
+    }
+    if matches_any(&tokens, &["tower", "defense", "turret", "turrets", "defenses"]) {
+        push(needs("tower_defense_grid"), &mut triples);
+    }
+    if matches_any(&tokens, &["wave", "waves", "spawner", "spawning", "budget"]) {
+        push(needs("wave_spawning"), &mut triples);
+    }
+    if matches_any(&tokens, &["procedural", "rooms", "connect", "mapping", "map"]) {
+        push(needs("procedural_generation"), &mut triples);
+    }
+    if matches_any(&tokens, &["boss", "phase", "telegraph", "bosses"]) {
+        push(needs("boss_ai_fsm"), &mut triples);
+    }
+    if matches_any(&tokens, &["status", "freeze", "burn", "shock", "poison"]) {
+        push(needs("status_effect_ticker"), &mut triples);
+    }
+    if matches_any(&tokens, &["economy", "scrap", "currency", "points"]) {
+        push(needs("currency_economy"), &mut triples);
+    }
+    let mut tier = "mid_tier";
+    if matches_any(&tokens, &["boss", "phase", "telegraph", "bosses", "status", "freeze", "burn", "shock", "poison", "economy", "scrap", "currency", "points"]) {
+        tier = "high_tier";
+    }
+    push((a.clone(), Term::str("game_tier"), Term::str(tier)), &mut triples);
+    let mut w_type = "shoot_standard";
+    if matches_any(&tokens, &["shotgun"]) {
+        w_type = "shoot_shotgun";
+    } else if matches_any(&tokens, &["beam", "laser", "railgun"]) {
+        w_type = "shoot_beam";
+    }
+    push((a.clone(), Term::str("weapon_type"), Term::str(w_type)), &mut triples);
+
+    let mut m_type = "move_standard";
+    if matches_any(&tokens, &["dash", "teleport", "blink"]) {
+        m_type = "move_dash";
+    }
+    push((a.clone(), Term::str("move_modifier"), Term::str(m_type)), &mut triples);
+
+    let mut t_type = "tower_standard";
+    if matches_any(&tokens, &["tesla", "lightning", "electricity"]) {
+        t_type = "tower_tesla";
+    }
+    push((a.clone(), Term::str("tower_type"), Term::str(t_type)), &mut triples);
+    if matches_any(&tokens, &["game", "games", "arcade", "play"]) {
+        if !matches_any(&tokens, &["multiplayer", "grid"]) {
+            push(needs("gui_game"), &mut triples);
+        }
+    }
+    if matches_any(&tokens, &[
+        "gui", "window", "visual", "widget", "widgets", "button", "buttons", "label", "labels",
+        "textbox", "textboxes", "form", "forms", "menu", "menus", "dialog", "dialogs", "frame",
+        "frames", "slider", "sliders", "layout", "layouts", "ui", "interface", "ux", "dashboard"
+    ]) {
         push(needs("gui_graphics"), &mut triples);
+    }
+    if matches_any(&tokens, &[
+        "ui", "ux", "interface", "dashboard", "widgets", "controls", "panels"
+    ]) {
+        push(needs("complete_gui"), &mut triples);
+    }
+
+    let frameworks = [
+        ("pyside6", &["pyside", "pyside6", "qt6"][..]),
+        ("pyqt6", &["pyqt", "pyqt6"][..]),
+        ("wxpython", &["wxpython", "wxwidgets"][..]),
+        ("customtkinter", &["customtkinter", "ctk"][..]),
+        ("dearpygui", &["dearpygui", "dpg"][..]),
+        ("flet", &["flet", "flutter"][..]),
+        ("nicegui", &["nicegui"][..]),
+        ("tkinter", &["tkinter"][..]),
+        ("ttkbootstrap", &["ttkbootstrap"][..]),
+        ("pysimplegui", &["pysimplegui"][..]),
+        ("kivy", &["kivy"][..]),
+        ("kivymd", &["kivymd"][..]),
+        ("toga", &["toga", "beeware"][..]),
+        ("textual", &["textual", "tui"][..]),
+        ("rich", &["rich"][..]),
+        ("prompt_toolkit", &["prompt_toolkit", "prompt-toolkit"][..]),
+        ("pygame_ce", &["pygame", "pygame-ce"][..]),
+        ("arcade", &["arcade"][..]),
+        ("pyglet", &["pyglet"][..]),
+        ("panda3d", &["panda3d"][..]),
+        ("gtk4", &["gtk4", "pygobject", "gtk"][..]),
+        ("qml", &["qml", "qtquick"][..]),
+        ("pywebview", &["pywebview", "webview"][..]),
+        ("eel", &["eel"][..]),
+        ("enaml", &["enaml"][..]),
+    ];
+
+    for (name, keywords) in &frameworks {
+        if matches_any(&tokens, keywords) {
+            push((a.clone(), Term::str("needs_gui_framework"), Term::str(*name)), &mut triples);
+        }
+    }
+    if matches_any(&tokens, &["academic", "ods", "sicp", "linux", "kernel", "pattern", "patterns"]) {
+        push(needs("academic_suite"), &mut triples);
+    }
+    if matches_any(&tokens, &["treap", "randomized"]) {
+        push(needs("randomized_bst"), &mut triples);
+    }
+    if matches_any(&tokens, &["avl", "rotation"]) {
+        push(needs("strict_height_balance"), &mut triples);
+    }
+    if matches_any(&tokens, &["evaluator", "eval", "apply"]) {
+        push(needs("eval_apply_loop"), &mut triples);
+    }
+    if matches_any(&tokens, &["lazy", "stream"]) {
+        push(needs("delayed_evaluation"), &mut triples);
+    }
+    if matches_any(&tokens, &["intrusive", "list"]) {
+        push(needs("intrusive_linked_list"), &mut triples);
+    }
+    if matches_any(&tokens, &["ring", "kfifo", "circular"]) {
+        push(needs("lockless_ring_buffer"), &mut triples);
+    }
+    if matches_any(&tokens, &["strategy", "decouple"]) {
+        push(needs("decouple_algorithm_from_client"), &mut triples);
+    }
+    if matches_any(&tokens, &["observer", "pubsub", "pub_sub"]) {
+        push(needs("decoupled_pub_sub"), &mut triples);
+    }
+    if matches_any(&tokens, &["gameboy"]) {
+        push(needs("gameboy_hybrid"), &mut triples);
+    }
+    if matches_any(&tokens, &["multilib", "pipeline"]) {
+        push(needs("multilib_suite"), &mut triples);
+    }
+    if matches_any(&tokens, &["pandas", "dataframe"]) {
+        push(needs("data_manipulation"), &mut triples);
+    }
+    if matches_any(&tokens, &["numpy", "matrix"]) {
+        push(needs("numerical_arrays"), &mut triples);
+    }
+    if matches_any(&tokens, &["sklearn", "regression", "ml"]) {
+        push(needs("machine_learning"), &mut triples);
+    }
+    if matches_any(&tokens, &["requests", "http"]) {
+        push(needs("http_requests"), &mut triples);
     }
     if matches_any(&tokens, &["web", "server", "api", "http"]) {
         push(needs("web_server"), &mut triples);
     }
     if matches_any(&tokens, &["database", "db", "sql"]) {
         push(needs("db_connector"), &mut triples);
+    }
+    if matches_any(&tokens, &["calculator", "calc", "math", "arithmetic", "addition"]) {
+        push(needs("math_calculator"), &mut triples);
     }
     if matches_any(&tokens, &["multiplayer", "online", "network", "networked", "server", "websocket", "websockets"]) {
         push(needs("networking"), &mut triples);
@@ -251,19 +400,57 @@ pub fn harvest_offline(request: &str) -> Harvest {
     // fixed LANGUAGE_KEYWORDS order. When the request names none, Python is
     // the default target — the assembly patterns key on this triple, so an
     // unqualified request keeps producing the classic Python program.
-    let mut language_found = false;
-    for (lang, keywords) in LANGUAGE_KEYWORDS {
-        if matches_any(&tokens, keywords) {
-            push((a.clone(), Term::str("target_language"), Term::str(*lang)), &mut triples);
-            language_found = true;
+    let is_multilang = matches_any(&tokens, &["multi", "multilang", "hybrid"]);
+    if is_multilang {
+        push(needs("multilang_tool"), &mut triples);
+        push((a.clone(), Term::str("frontend_language"), Term::str("lang_javascript")), &mut triples);
+        let mut backend_found = false;
+        for (lang, keywords) in LANGUAGE_KEYWORDS {
+            if *lang != "lang_javascript" && matches_any(&tokens, keywords) {
+                push((a.clone(), Term::str("backend_language"), Term::str(*lang)), &mut triples);
+                backend_found = true;
+            }
+        }
+        if !backend_found {
+            push((a.clone(), Term::str("backend_language"), Term::str("lang_go")), &mut triples);
+        }
+    } else {
+        let mut language_found = false;
+        for (lang, keywords) in LANGUAGE_KEYWORDS {
+            if matches_any(&tokens, keywords) {
+                push((a.clone(), Term::str("target_language"), Term::str(*lang)), &mut triples);
+                language_found = true;
+            }
+        }
+        if !language_found {
+            push(
+                (a.clone(), Term::str("target_language"), Term::str("lang_python")),
+                &mut triples,
+            );
         }
     }
-    if !language_found {
-        push(
-            (a.clone(), Term::str("target_language"), Term::str("lang_python")),
-            &mut triples,
-        );
+
+    let mut color = "cyan".to_string();
+    let mut speed = "3".to_string();
+    let mut limit = "10".to_string();
+    for i in 0..tokens.len() {
+        if ["red", "blue", "green", "cyan", "yellow", "orange"].contains(&tokens[i].as_str()) {
+            color = tokens[i].clone();
+        }
+        if tokens[i] == "speed" && i + 1 < tokens.len() {
+            if tokens[i+1].chars().all(|c| c.is_numeric()) {
+                speed = tokens[i+1].clone();
+            }
+        }
+        if tokens[i] == "limit" && i + 1 < tokens.len() {
+            if tokens[i+1].chars().all(|c| c.is_numeric()) {
+                limit = tokens[i+1].clone();
+            }
+        }
     }
+    push((a.clone(), Term::str("ball_color"), Term::str(color)), &mut triples);
+    push((a.clone(), Term::str("ball_speed"), Term::str(speed)), &mut triples);
+    push((a.clone(), Term::str("calc_limit"), Term::str(limit)), &mut triples);
 
     Harvest {
         goal: (a, Term::str("code"), Term::str("?code")),

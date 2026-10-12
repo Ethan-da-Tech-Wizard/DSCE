@@ -1,0 +1,102 @@
+{
+  "id": "ddia_rules",
+  "concept": "Designing Data-Intensive Applications design selection rules: matches application requirements to optimal storage, replication, partitioning, encoding, and consensus designs.",
+  "rules": [
+    {
+      "name": "recommend-write-optimized-storage",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "high_write_throughput"]
+      ],
+      "conclusion": ["?app", "recommended_storage", "lsm_tree"]
+    },
+    {
+      "name": "recommend-read-optimized-storage",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "low_latency_reads"]
+      ],
+      "conclusion": ["?app", "recommended_storage", "b_tree"]
+    },
+    {
+      "name": "recommend-relational-model",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "many_to_many_relationships"]
+      ],
+      "conclusion": ["?app", "recommended_model", "relational_model"]
+    },
+    {
+      "name": "recommend-document-model",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "hierarchical_nested_documents"]
+      ],
+      "conclusion": ["?app", "recommended_model", "document_model"]
+    },
+    {
+      "name": "recommend-hash-partitioning",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "even_write_distribution"]
+      ],
+      "conclusion": ["?app", "recommended_partitioning", "hash_partitioning"]
+    },
+    {
+      "name": "recommend-range-partitioning",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "efficient_range_queries"]
+      ],
+      "conclusion": ["?app", "recommended_partitioning", "key_range_partitioning"]
+    },
+    {
+      "name": "recommend-protobuf-encoding",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "binary_tag_based_compatibility"]
+      ],
+      "conclusion": ["?app", "recommended_encoding", "protobuf_encoding"]
+    },
+    {
+      "name": "recommend-avro-encoding",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "compact_reader_writer_schema"]
+      ],
+      "conclusion": ["?app", "recommended_encoding", "avro_encoding"]
+    },
+    {
+      "name": "recommend-2pc-consensus",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "atomic_multi_shard_tx"]
+      ],
+      "conclusion": ["?app", "recommended_consensus", "two_phase_commit"]
+    },
+    {
+      "name": "recommend-raft-consensus",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "high_availability_consensus"]
+      ],
+      "conclusion": ["?app", "recommended_consensus", "raft_consensus"]
+    },
+    {
+      "name": "recommend-serializability",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "prevent_write_skew"]
+      ],
+      "conclusion": ["?app", "recommended_isolation", "serializability"]
+    },
+    {
+      "name": "recommend-snapshot-isolation",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "consistent_read_backups"]
+      ],
+      "conclusion": ["?app", "recommended_isolation", "snapshot_isolation"]
+    }
+  ]
+}

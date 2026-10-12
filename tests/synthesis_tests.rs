@@ -28,12 +28,16 @@ fn synthesis_kb_loads_completely() {
     assert_eq!(
         ids,
         vec![
+            "academic_concepts",
+            "academic_rules",
             "c_std_library",
             "container_app",
             "cpp_gui_app",
             "cpp_std_library",
             "csharp_dotnet_library",
             "cuda_toolkit",
+            "ddia_concepts",
+            "ddia_rules",
             "dependency_resolution",
             "docker_container",
             "electron_framework",
@@ -49,11 +53,21 @@ fn synthesis_kb_loads_completely() {
             "kubernetes_orchestration",
             "mvc",
             "node_js_runtime",
+            "polyglot_academic_app",
+            "polyglot_calc_app",
             "polyglot_cli_app",
             "polyglot_db_app",
+            "polyglot_ddia_app",
+            "polyglot_game_app",
             "polyglot_gui_app",
+            "polyglot_hybrid_app",
+            "polyglot_multilang_app",
+            "polyglot_multilib_app",
+            "polyglot_ui_app",
             "polyglot_web_app",
             "pygame_graphics",
+            "python_extended",
+            "python_gui_libraries",
             "pytorch_framework",
             "qt_cpp_graphics",
             "random_generator",
@@ -62,6 +76,7 @@ fn synthesis_kb_loads_completely() {
             "sql_sqlite_library",
             "sqlite_databases",
             "tkinter_graphics",
+            "vocabulary_mapping",
             "websockets_networking",
             "x86_64_assembly",
         ]
@@ -101,8 +116,18 @@ fn library_vials_are_decoupled() {
 #[test]
 fn flagship_request_assembles_full_program() {
     let result = synthesize("Make a multiplayer grid game with a scoring system");
-    assert_eq!(result.answers.len(), 1, "expected exactly one assembled program");
-    let answer = &result.answers[0];
+    assert!(result.answers.len() >= 1, "expected at least one assembled program");
+    // Find the Pygame answer among the candidates
+    let mut pygame_answer = None;
+    for ans in &result.answers {
+        if let Some(Term::Str(c)) = ans.bindings.get("?code") {
+            if c.contains("import pygame") {
+                pygame_answer = Some(ans.clone());
+                break;
+            }
+        }
+    }
+    let answer = pygame_answer.expect("Should have compiled a pygame version of the flagship request");
     let Some(Term::Str(code)) = answer.bindings.get("?code") else {
         panic!("?code did not bind to a string");
     };
@@ -124,7 +149,7 @@ fn flagship_request_assembles_full_program() {
     assert!(model < view && view < controller && controller < main_loop);
 
     // The proof traces back through the pattern rules to library axioms.
-    let proof = result.proof(answer);
+    let proof = result.proof(&answer);
     assert!(proof.contains("assemble-application"));
     assert!(proof.contains("bind-capability"));
     assert!(proof.contains("asserted by query"));
@@ -488,3 +513,477 @@ fn express_framework_synthesis() {
     assert!(code.contains("require('express')"));
     assert!(code.contains("app.listen"));
 }
+
+#[test]
+fn polyglot_calc_app_synthesis_python() {
+    let code = code_with_banner("Make a calculator in Python", "Python");
+    assert!(code.contains("def add(a, b):"));
+    assert!(code.contains("Calculator Demo:"));
+}
+
+#[test]
+fn polyglot_calc_app_synthesis_go() {
+    let code = code_with_banner("Make a calculator in Go", "Go");
+    assert!(code.contains("package main"));
+    assert!(code.contains("func add(a, b float64)"));
+}
+
+#[test]
+fn polyglot_calc_app_synthesis_assembly() {
+    let code = code_with_banner("Make a calculator in assembly", "NASM");
+    assert!(code.contains("global _start"));
+    assert!(code.contains("add eax, 5"));
+}
+
+#[test]
+fn polyglot_game_app_synthesis_python() {
+    let code = code_with_banner("Make a game in Python", "Python");
+    assert!(code.contains("IN-DEPTH INSTRUCTIONS FOR PYTHON TKINTER"));
+    assert!(code.contains("canvas.create_oval"));
+}
+
+#[test]
+fn polyglot_game_app_synthesis_go() {
+    let code = code_with_banner("Make a game in Go", "Go");
+    assert!(code.contains("IN-DEPTH INSTRUCTIONS FOR RETRO 8-BIT GO CHASE"));
+    assert!(code.contains("playerPos"));
+    assert!(code.contains("lionPos"));
+}
+
+#[test]
+fn polyglot_game_app_synthesis_assembly() {
+    let code = code_with_banner("Make a game in assembly", "NASM");
+    assert!(code.contains("IN-DEPTH INSTRUCTIONS FOR ASSEMBLY GAME"));
+    assert!(code.contains("mov eax, 42"));
+}
+
+#[test]
+fn polyglot_multilang_tool_synthesis_go_js() {
+    let code = code_with_banner("Make a multi-language tool in Go", "Go");
+    // Contains Go backend web server
+    assert!(code.contains("package main"));
+    assert!(code.contains("net/http"));
+    // Contains JS frontend logic
+    assert!(code.contains("assembled by the DSCE polyglot assembler (JavaScript / Node.js)"));
+    assert!(code.contains("console.log"));
+}
+
+#[test]
+fn ddia_architectural_inference_and_code_synthesis() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_data_app");
+    
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("high_write_throughput")),
+        (app.clone(), t("needs"), t("prevent_write_skew")),
+        (app.clone(), t("needs"), t("high_availability_consensus")),
+        (app.clone(), t("needs"), t("even_write_distribution")),
+        (app.clone(), t("target_language"), t("lang_python")),
+    ];
+    
+    // 1. Logical recommendation assertions
+    let goal = (app.clone(), t("recommended_storage"), t("?storage"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    assert_eq!(result.answers[0].bindings.get("?storage").unwrap(), &t("lsm_tree"));
+
+    let goal_iso = (app.clone(), t("recommended_isolation"), t("?iso"));
+    let result_iso = engine.ask_with_facts(&goal_iso, &extra_facts);
+    assert_eq!(result_iso.answers.len(), 1);
+    assert_eq!(result_iso.answers[0].bindings.get("?iso").unwrap(), &t("serializability"));
+
+    // 2. Code synthesis assertions
+    let goal_code = (app.clone(), t("code"), t("?code"));
+    let result_code = engine.ask_with_facts(&goal_code, &extra_facts);
+    
+    assert!(result_code.answers.len() >= 3);
+    
+    let mut lsm_found = false;
+    let mut raft_found = false;
+    let mut hash_found = false;
+    
+    for answer in &result_code.answers {
+        if let Some(Term::Str(code)) = answer.bindings.get("?code") {
+            if code.contains("class LSMTree:") && code.contains("wal_path") && code.contains("__tombstone__") {
+                lsm_found = true;
+            }
+            if code.contains("class RaftReplica:") && code.contains("request_vote") && code.contains("votes") {
+                raft_found = true;
+            }
+            if code.contains("class HashRouter:") && code.contains("md5") {
+                hash_found = true;
+            }
+        }
+    }
+    
+    assert!(lsm_found, "LSM-Tree storage code with WAL/Tombstones should be synthesized");
+    assert!(raft_found, "Raft consensus replica code should be synthesized");
+    assert!(hash_found, "Hash partitioning code with md5 routing should be synthesized");
+}
+
+#[test]
+fn polyglot_ui_synthesis_python() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_ui_app");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("complete_gui")),
+        (app.clone(), t("target_language"), t("lang_python")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("tkinter"));
+    assert!(code.contains("BG_COLOR"));
+    assert!(code.contains("grid_frame"));
+    assert!(code.contains("mainloop"));
+}
+
+#[test]
+fn polyglot_ui_synthesis_assembly() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_asm_ui");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("complete_gui")),
+        (app.clone(), t("target_language"), t("lang_assembly")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("section .data"));
+    assert!(code.contains("frame: db"));
+    assert!(code.contains("RETRO ASSEMBLY INTERFACE"));
+}
+
+#[test]
+fn polyglot_ui_synthesis_sql() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_sql_ui");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("complete_gui")),
+        (app.clone(), t("target_language"), t("lang_sql")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("SELECT"));
+    assert!(code.contains("SQL DATABASE INTERFACE"));
+    assert!(code.contains("UNION ALL"));
+}
+
+#[test]
+fn polyglot_academic_synthesis_python() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_academic_app");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("academic_suite")),
+        (app.clone(), t("needs"), t("randomized_bst")),
+        (app.clone(), t("needs"), t("eval_apply_loop")),
+        (app.clone(), t("needs"), t("intrusive_linked_list")),
+        (app.clone(), t("needs"), t("decouple_algorithm_from_client")),
+        (app.clone(), t("target_language"), t("lang_python")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("class TreapNode:"), "Treap structures should be synthesized");
+    assert!(code.contains("def sicp_eval("), "Metacircular evaluator should be synthesized");
+    assert!(code.contains("class ListHead:"), "Linux intrusive doubly-linked list should be synthesized");
+    assert!(code.contains("class SortingStrategy:"), "Strategy pattern should be synthesized");
+}
+
+#[test]
+fn polyglot_academic_synthesis_go() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_academic_app_go");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("academic_suite")),
+        (app.clone(), t("needs"), t("randomized_bst")),
+        (app.clone(), t("needs"), t("eval_apply_loop")),
+        (app.clone(), t("needs"), t("intrusive_linked_list")),
+        (app.clone(), t("needs"), t("decouple_algorithm_from_client")),
+        (app.clone(), t("target_language"), t("lang_go")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("type TreapNode struct"), "Go TreapNode should be synthesized");
+    assert!(code.contains("type EnvFrame struct"), "Go EnvFrame should be synthesized");
+    assert!(code.contains("func ListAdd("), "Go ListAdd should be synthesized");
+    assert!(code.contains("type SortingStrategy interface"), "Go Strategy interface should be synthesized");
+}
+
+#[test]
+fn polyglot_academic_synthesis_rust() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_academic_app_rust");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("academic_suite")),
+        (app.clone(), t("needs"), t("randomized_bst")),
+        (app.clone(), t("needs"), t("eval_apply_loop")),
+        (app.clone(), t("needs"), t("intrusive_linked_list")),
+        (app.clone(), t("needs"), t("decouple_algorithm_from_client")),
+        (app.clone(), t("target_language"), t("lang_rust")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("struct TreapNode"), "Rust TreapNode should be synthesized");
+    assert!(code.contains("struct EnvFrame"), "Rust EnvFrame should be synthesized");
+    assert!(code.contains("unsafe fn add("), "Rust unsafe add list should be synthesized");
+    assert!(code.contains("trait SortingStrategy"), "Rust SortingStrategy trait should be synthesized");
+}
+
+#[test]
+fn polyglot_multilib_synthesis_python() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_multilib_app");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("multilib_suite")),
+        (app.clone(), t("needs"), t("data_manipulation")),
+        (app.clone(), t("needs"), t("numerical_arrays")),
+        (app.clone(), t("needs"), t("machine_learning")),
+        (app.clone(), t("needs"), t("http_requests")),
+        (app.clone(), t("target_language"), t("lang_python")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("import pandas as pd"), "Pandas imports should be synthesized");
+    assert!(code.contains("import numpy as np"), "NumPy imports should be synthesized");
+    assert!(code.contains("from sklearn.linear_model import LinearRegression"), "Scikit-Learn imports should be synthesized");
+    assert!(code.contains("import requests"), "Requests imports should be synthesized");
+    assert!(code.contains("df['Scaled'] = df['Value'] * 1.5"), "Pandas processing logic should be synthesized");
+    assert!(code.contains("np.linalg.eigvals"), "NumPy eigenvalue computation should be synthesized");
+}
+
+#[test]
+fn polyglot_hybrid_synthesis_python() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_hybrid_app");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("needs"), t("gameboy_hybrid")),
+        (app.clone(), t("target_language"), t("lang_python")),
+        (app.clone(), t("ball_color"), t("cyan")),
+        (app.clone(), t("ball_speed"), t("3")),
+        (app.clone(), t("calc_limit"), t("10")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("def press_key(key):"), "Calculator code should be synthesized");
+    assert!(code.contains("tk.Canvas("), "Game code should be synthesized");
+}
+
+#[test]
+fn polyglot_modular_game_synthesis() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_complex_game");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("target_language"), t("lang_python")),
+        (app.clone(), t("game_tier"), t("mid_tier")),
+        (app.clone(), t("needs"), t("twin_stick_combat")),
+        (app.clone(), t("needs"), t("tower_defense_grid")),
+        (app.clone(), t("needs"), t("wave_spawning")),
+        (app.clone(), t("needs"), t("procedural_generation")),
+        (app.clone(), t("weapon_type"), t("shoot_standard")),
+        (app.clone(), t("move_modifier"), t("move_standard")),
+        (app.clone(), t("tower_type"), t("tower_standard")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code.contains("import pygame"), "Pygame import should be synthesized");
+    assert!(code.contains("player_pos ="), "Player position init should be synthesized");
+    assert!(code.contains("def update_game():"), "update_game loop should be synthesized");
+    assert!(code.contains("def draw_game():"), "draw_game loop should be synthesized");
+    assert!(code.contains("clock.tick(60)"), "Frame rate limiter should be synthesized");
+}
+
+#[test]
+fn polyglot_dynamic_game_synthesis() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_shotgun_game");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("target_language"), t("lang_python")),
+        (app.clone(), t("game_tier"), t("mid_tier")),
+        (app.clone(), t("needs"), t("twin_stick_combat")),
+        (app.clone(), t("needs"), t("tower_defense_grid")),
+        (app.clone(), t("needs"), t("wave_spawning")),
+        (app.clone(), t("needs"), t("procedural_generation")),
+        (app.clone(), t("weapon_type"), t("shoot_shotgun")),
+        (app.clone(), t("move_modifier"), t("move_dash")),
+        (app.clone(), t("tower_type"), t("tower_tesla")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    // Assert shotgun vectors
+    assert!(code.contains("for a_offset in [-0.25, 0.0, 0.25]:"), "Shotgun code should be synthesized");
+    // Assert dash controls
+    assert!(code.contains("if keys[pygame.K_LSHIFT]: mult = 3.0"), "Dash modifier should be synthesized");
+    // Assert tesla coils
+    assert!(code.contains("pygame.draw.rect(screen, (0, 180, 255),"), "Tesla coil draw should be synthesized");
+}
+
+#[test]
+fn polyglot_python_gui_frameworks_synthesis() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+
+    // Test PySide6 App
+    let app1 = t("my_pyside_app");
+    let extra_facts1 = vec![
+        (app1.clone(), t("is_a"), t("application")),
+        (app1.clone(), t("target_language"), t("lang_python")),
+        (app1.clone(), t("needs_gui_framework"), t("pyside6")),
+    ];
+    let goal1 = (app1.clone(), t("code"), t("?code"));
+    let result1 = engine.ask_with_facts(&goal1, &extra_facts1);
+    assert_eq!(result1.answers.len(), 1);
+    let code1 = match result1.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code1.contains("PySide6.QtWidgets import QApplication"), "PySide6 imports should be present");
+
+    // Test CustomTkinter App
+    let app2 = t("my_ctk_app");
+    let extra_facts2 = vec![
+        (app2.clone(), t("is_a"), t("application")),
+        (app2.clone(), t("target_language"), t("lang_python")),
+        (app2.clone(), t("needs_gui_framework"), t("customtkinter")),
+    ];
+    let goal2 = (app2.clone(), t("code"), t("?code"));
+    let result2 = engine.ask_with_facts(&goal2, &extra_facts2);
+    assert_eq!(result2.answers.len(), 1);
+    let code2 = match result2.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code2.contains("import customtkinter as ctk"), "CustomTkinter imports should be present");
+
+    // Test Textual TUI App
+    let app3 = t("my_textual_app");
+    let extra_facts3 = vec![
+        (app3.clone(), t("is_a"), t("application")),
+        (app3.clone(), t("target_language"), t("lang_python")),
+        (app3.clone(), t("needs_gui_framework"), t("textual")),
+    ];
+    let goal3 = (app3.clone(), t("code"), t("?code"));
+    let result3 = engine.ask_with_facts(&goal3, &extra_facts3);
+    assert_eq!(result3.answers.len(), 1);
+    let code3 = match result3.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    assert!(code3.contains("from textual.app import App"), "Textual imports should be present");
+}
+
+#[test]
+fn polyglot_neon_rift_synthesis() {
+    let mut engine = engine_from_dir(vials_dir()).unwrap();
+    let app = t("my_neon_rift_defense");
+    let extra_facts = vec![
+        (app.clone(), t("is_a"), t("application")),
+        (app.clone(), t("target_language"), t("lang_python")),
+        (app.clone(), t("game_tier"), t("high_tier")),
+        (app.clone(), t("needs"), t("twin_stick_combat")),
+        (app.clone(), t("needs"), t("tower_defense_grid")),
+        (app.clone(), t("needs"), t("wave_spawning")),
+        (app.clone(), t("needs"), t("procedural_generation")),
+        (app.clone(), t("needs"), t("boss_ai_fsm")),
+        (app.clone(), t("needs"), t("status_effect_ticker")),
+        (app.clone(), t("needs"), t("currency_economy")),
+        (app.clone(), t("weapon_type"), t("shoot_shotgun")),
+        (app.clone(), t("move_modifier"), t("move_dash")),
+        (app.clone(), t("tower_type"), t("tower_tesla")),
+    ];
+    let goal = (app.clone(), t("code"), t("?code"));
+    let result = engine.ask_with_facts(&goal, &extra_facts);
+    assert_eq!(result.answers.len(), 1);
+    let code = match result.answers[0].bindings.get("?code").unwrap() {
+        Term::Str(s) => s,
+        _ => panic!("Expected string code"),
+    };
+    // Assert 7-system loops
+    assert!(code.contains("boss_active = False"), "Boss FSM should be initialized");
+    assert!(code.contains("status_slow_multiplier = 0.5"), "Status ticker should be initialized");
+    assert!(code.contains("scrap = 100"), "Currency economy should be initialized");
+    assert!(code.contains("scrap -= tower_cost"), "Tower purchase costs should be updated");
+    assert!(code.contains("boss_telegraph_timer ="), "Boss AI ticks should be updated");
+}
+
+#[test]
+fn polyglot_declarative_harvesting() {
+    let result = synthesize("Make a form in python that displays flashing colors");
+    assert!(result.answers.len() >= 1, "expected at least one assembled program");
+    
+    // Find the Tkinter GUI answer among candidates
+    let mut tkinter_code = None;
+    for ans in &result.answers {
+        if let Some(Term::Str(c)) = ans.bindings.get("?code") {
+            if c.contains("import tkinter") {
+                tkinter_code = Some(c.clone());
+                break;
+            }
+        }
+    }
+    
+    let code = tkinter_code.expect("Should have compiled a tkinter GUI based on declarative vocabulary mapping");
+    assert!(code.contains("import tkinter as tk"));
+    assert!(code.contains("root = tk.Tk()"));
+}
+
+
+
+
