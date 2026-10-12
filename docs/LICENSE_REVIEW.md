@@ -8,6 +8,7 @@ The owner selected MIT for previously unlicensed original code. Existing license
 
 - [LICENSE](../LICENSE)
 - [NOTICE](../NOTICE)
+- [docs/GCIDE_LICENSE.md](../docs/GCIDE_LICENSE.md)
 
 ## Dependency evidence
 
@@ -27,7 +28,7 @@ The owner selected MIT for previously unlicensed original code. Existing license
 
 ## Project-specific considerations
 
-Slint offers GPL and alternative licensing routes. The Rust GUI must comply with the specific selected Slint terms; the Python reference’s Apache-2.0 license does not settle that choice. See [Slint licensing](https://slint.dev/pricing).
+Slint offers GPL and alternative licensing routes. The Rust GUI must comply with the specific selected Slint terms; the Python reference’s Apache-2.0 license does not settle that choice. See [Slint licensing](https://slint.dev/pricing). The GCIDE-derived dictionary is separately GPL-covered. The converted source carries GPL-2.0 text, while current GCIDE upstream specifies GPL-3.0-or-later; the exact source revision/version requires confirmation before bundling. See [dictionary provenance and preserved license texts](GCIDE_LICENSE.md). The dictionary is not public domain or Apache-only.
 
 ## Remaining work before binary distribution
 
