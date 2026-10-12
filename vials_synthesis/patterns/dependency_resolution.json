@@ -26,6 +26,14 @@
         ["?fw", "install_command", "?cmd"]
       ],
       "conclusion": ["?app", "install_step", "?cmd"]
+    },
+    {
+      "name": "harvest-token-need",
+      "premises": [
+        ["?app", "contains_token", "?token"],
+        ["?token", "maps_to_need", "?need"]
+      ],
+      "conclusion": ["?app", "needs", "?need"]
     }
   ],
   "evidence": ["Package dependency resolution: standard transitive-closure reasoning"]

@@ -1,0 +1,89 @@
+{
+  "id": "ddia_concepts",
+  "concept": "Designing Data-Intensive Applications (Martin Kleppmann) - Complete distributed systems, storage, and transaction taxonomy covering all 12 chapters.",
+  "confidence": 1.0,
+  "evidence": [
+    "Designing Data-Intensive Applications, Martin Kleppmann, 2017"
+  ],
+  "facts": [
+    ["chapter_1", "covers", "reliability_scalability_maintainability"],
+    ["reliability", "tolerates", "hardware_software_human_faults"],
+    ["scalability", "handles_growth_via", "load_parameters"],
+    ["maintainability", "promotes", "operability_simplicity_extensibility"],
+
+    ["chapter_2", "covers", "data_models_and_query_languages"],
+    ["relational_model", "optimized_for", "many_to_many_relationships"],
+    ["document_model", "optimized_for", "hierarchical_nested_documents"],
+    ["graph_model", "optimized_for", "deep_interconnected_networks"],
+
+    ["chapter_3", "covers", "storage_and_retrieval"],
+    ["lsm_tree", "is_a", "storage_engine"],
+    ["lsm_tree", "optimized_for", "write_throughput"],
+    ["lsm_tree", "uses", "sstables"],
+    ["lsm_tree", "uses", "memtable"],
+    ["lsm_tree", "uses", "compaction"],
+    ["b_tree", "is_a", "storage_engine"],
+    ["b_tree", "optimized_for", "read_throughput"],
+    ["b_tree", "uses", "fixed_size_pages"],
+    ["column_oriented", "is_a", "analytics_storage"],
+    ["column_oriented", "optimized_for", "olap_aggregations"],
+
+    ["chapter_4", "covers", "encoding_and_evolution"],
+    ["json_encoding", "is_a", "serialization_format"],
+    ["json_encoding", "properties", "human_readable_textual"],
+    ["protobuf_encoding", "is_a", "serialization_format"],
+    ["protobuf_encoding", "properties", "binary_tag_based_compatibility"],
+    ["avro_encoding", "is_a", "serialization_format"],
+    ["avro_encoding", "properties", "compact_reader_writer_schema"],
+
+    ["chapter_5", "covers", "replication"],
+    ["single_leader", "avoids", "write_conflicts"],
+    ["single_leader", "suffers_from", "replication_lag"],
+    ["multi_leader", "optimized_for", "multi_datacenter_writes"],
+    ["multi_leader", "requires", "conflict_resolution"],
+    ["leaderless", "optimized_for", "high_availability_writes"],
+    ["leaderless", "requires", "quorum_reads"],
+    ["leaderless", "requires", "quorum_writes"],
+
+    ["chapter_6", "covers", "partitioning"],
+    ["key_range_partitioning", "supports", "efficient_range_queries"],
+    ["hash_partitioning", "avoids", "write_hotspots"],
+    ["local_secondary_index", "is_a", "partitioned_index"],
+    ["local_secondary_index", "properties", "document_partitioned"],
+    ["global_secondary_index", "is_a", "partitioned_index"],
+    ["global_secondary_index", "properties", "term_partitioned"],
+
+    ["chapter_7", "covers", "transactions"],
+    ["read_committed", "prevents", "dirty_reads"],
+    ["read_committed", "prevents", "dirty_writes"],
+    ["snapshot_isolation", "prevents", "read_skew"],
+    ["snapshot_isolation", "uses", "mvcc"],
+    ["serializability", "prevents", "write_skew"],
+    ["serializability", "prevents", "phantom_reads"],
+
+    ["chapter_8", "covers", "distributed_system_troubles"],
+    ["physical_clocks", "suffer_from", "ntp_clock_drift"],
+    ["logical_clocks", "track", "causal_ordering"],
+    ["network_partitions", "cause", "message_loss_and_delays"],
+
+    ["chapter_9", "covers", "consistency_and_consensus"],
+    ["linearizability", "provides", "strong_recency_guarantee"],
+    ["two_phase_commit", "guarantees", "multi_shard_atomic_commit"],
+    ["two_phase_commit", "blocks_on", "coordinator_crash"],
+    ["raft_consensus", "guarantees", "fault_tolerant_active_replication"],
+    ["raft_consensus", "uses", "leader_election_and_heartbeats"],
+
+    ["chapter_10", "covers", "batch_processing"],
+    ["mapreduce", "is_a", "batch_processing_engine"],
+    ["mapreduce", "uses", "map_sort_reduce_phases"],
+
+    ["chapter_11", "covers", "stream_processing"],
+    ["kafka", "is_a", "stream_message_broker"],
+    ["kafka", "uses", "partitioned_commit_log"],
+    ["cqrs", "separates", "write_commands_and_read_queries"],
+
+    ["chapter_12", "covers", "future_of_data_systems"],
+    ["lambda_architecture", "combines", "batch_and_speed_layers"],
+    ["kappa_architecture", "processes", "all_history_via_stream_layer"]
+  ]
+}

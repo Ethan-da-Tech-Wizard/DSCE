@@ -1,0 +1,31 @@
+{
+  "id": "polyglot_ui_app",
+  "concept": "Polyglot GUI/UX assembler: binds an app's target_language to the library implementing it, and concatenates the theme, layout, widgets, and events blocks.",
+  "rules": [
+    {
+      "name": "bind-ui-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_ui_language", "?lib"]
+    },
+    {
+      "name": "assemble-polyglot-ui-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "complete_gui"],
+        ["?app", "uses_ui_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_ui_theme", "?theme"],
+        ["?lib", "code_ui_layout", "?layout"],
+        ["?lib", "code_ui_widgets", "?widgets"],
+        ["?lib", "code_ui_events", "?events"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?theme + ?layout + ?widgets + ?events"
+    }
+  ],
+  "evidence": ["Language-agnostic structured layout and interface compilation logic"]
+}

@@ -22,6 +22,17 @@
       ],
       "conclusion": ["?app", "code", "?code"],
       "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-python-framework-gui",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "lang_python"],
+        ["?app", "needs_gui_framework", "?framework"],
+        ["?framework", "implements_language", "lang_python"],
+        ["?framework", "code_init", "?code"]
+      ],
+      "conclusion": ["?app", "code", "?code"]
     }
   ],
   "evidence": ["Language-agnostic GUI program assembly: capability/provider binding over target_language"]

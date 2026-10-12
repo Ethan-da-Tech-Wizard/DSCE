@@ -1,9 +1,10 @@
 {
   "id": "pygame_graphics",
-  "concept": "Pygame graphics library: screen initialization, surface rendering, event polling, and color tables. Pure API data — no rules, no references to any other library; the pattern vials bind to it through 'provides' and 'is_a graphics_library'.",
+  "concept": "Pygame graphics library with atomic sub-mechanic template slots for custom player movement, weapon fire, and tower styles.",
   "facts": [
     ["pygame", "is_a", "python_graphics_library"],
     ["pygame", "provides", "graphics"],
+    ["pygame", "implements_language", "lang_python"],
 
     ["pygame", "function", "pygame.init"],
     ["pygame.init", "returns", "None"],
@@ -35,7 +36,47 @@
     ["pygame", "code_events", "def poll_input(state):\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            state['running'] = False\n        elif event.type == pygame.KEYDOWN:\n            state['last_key'] = event.key\n"],
     ["pygame", "code_text_render", "import pygame\nimport random\npygame.init()\npygame.font.init()\nscreen = pygame.display.set_mode((640, 480))\nfont = pygame.font.SysFont('Arial', 48)\ndef draw_text(screen, text):\n    screen.fill((30, 30, 40))\n    img = font.render(text, True, (0, 255, 255))\n    screen.blit(img, (150, 200))\n    pygame.display.flip()\n"],
     ["pygame", "code_events_space", "def poll_input(state):\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            state['running'] = False\n        elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:\n            state['number'] = 'Num: ' + str(random.randint(1, 100))\n"],
-    ["pygame", "code_loop", "state = {'running': True, 'number': 'Press SPACE'}\ndef tick(state):\n    return state['running']\ndef main():\n    while tick(state):\n        poll_input(state)\n        draw_text(screen, state['number'])\n        pygame.time.Clock().tick(30)\nmain()\n"]
+    ["pygame", "code_loop", "state = {'running': True, 'number': 'Press SPACE'}\ndef tick(state):\n    return state['running']\ndef main():\n    while tick(state):\n        poll_input(state)\n        draw_text(screen, state['number'])\n        pygame.time.Clock().tick(30)\nmain()\n"],
+
+    ["pygame", "code_import", "import pygame\nimport math\nimport random\n"],
+    ["pygame", "combat_code_import", "import pygame\nimport math\nimport random\n"],
+    ["pygame", "combat_code_init", "bullets = []\nparticles = []\nplayer_pos = [320.0, 240.0]\n"],
+    ["pygame", "combat_code_update_base", "m_pos = pygame.mouse.get_pos()\nm_buttons = pygame.mouse.get_pressed()\nif m_buttons[0]:\n    angle = math.atan2(m_pos[1] - player_pos[1], m_pos[0] - player_pos[0])\n"],
+    ["pygame", "combat_code_update_bullets", "for b in bullets:\n    b['pos'][0] += b['vel'][0]\n    b['pos'][1] += b['vel'][1]\n"],
+    ["pygame", "combat_code_draw", "pygame.draw.circle(screen, (0, 255, 255), (int(player_pos[0]), int(player_pos[1])), 15)\nfor b in bullets:\n    pygame.draw.circle(screen, (255, 255, 0), (int(b['pos'][0]), int(b['pos'][1])), 4)\n"],
+
+    ["pygame", "shoot_standard", "    bullets.append({'pos': list(player_pos), 'vel': [math.cos(angle)*8.0, math.sin(angle)*8.0]})\n"],
+    ["pygame", "shoot_shotgun", "    for a_offset in [-0.25, 0.0, 0.25]:\n        bullets.append({'pos': list(player_pos), 'vel': [math.cos(angle+a_offset)*7.0, math.sin(angle+a_offset)*7.0]})\n"],
+    ["pygame", "shoot_beam", "    bullets.append({'pos': list(player_pos), 'vel': [math.cos(angle)*15.0, math.sin(angle)*15.0], 'beam': True})\n"],
+
+    ["pygame", "move_standard", "keys = pygame.key.get_pressed()\nif keys[pygame.K_a]: player_pos[0] -= 4.0\nif keys[pygame.K_d]: player_pos[0] += 4.0\nif keys[pygame.K_w]: player_pos[1] -= 4.0\nif keys[pygame.K_s]: player_pos[1] += 4.0\n"],
+    ["pygame", "move_dash", "keys = pygame.key.get_pressed()\nmult = 1.0\nif keys[pygame.K_LSHIFT]: mult = 3.0\nif keys[pygame.K_a]: player_pos[0] -= 4.0 * mult\nif keys[pygame.K_d]: player_pos[0] += 4.0 * mult\nif keys[pygame.K_w]: player_pos[1] -= 4.0 * mult\nif keys[pygame.K_s]: player_pos[1] += 4.0 * mult\n"],
+
+    ["pygame", "tower_code_init", "towers = []\ntower_cost = 50\nscrap = 150\n"],
+    ["pygame", "tower_code_update", "for event in pygame.event.get():\n    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:\n        pos = pygame.mouse.get_pos()\n        towers.append({'pos': pos, 'range': 150})\n"],
+    
+    ["pygame", "tower_standard", "for t in towers:\n    pygame.draw.circle(screen, (0, 255, 0), t['pos'], 12)\n    pygame.draw.circle(screen, (0, 255, 0), t['pos'], t['range'], 1)\n"],
+    ["pygame", "tower_tesla", "for t in towers:\n    pygame.draw.rect(screen, (0, 180, 255), (t['pos'][0]-10, t['pos'][1]-10, 20, 20))\n    pygame.draw.circle(screen, (0, 180, 255), t['pos'], t['range'], 1)\n"],
+
+    ["pygame", "wave_code_init", "enemies = []\nwave_number = 1\nwave_timer = 0\n"],
+    ["pygame", "wave_code_update", "wave_timer += 1\nif wave_timer % 120 == 0:\n    enemies.append({'pos': [random.randint(0, 640), 0], 'hp': 30})\nfor e in enemies:\n    dx = player_pos[0] - e['pos'][0]\n    dy = player_pos[1] - e['pos'][1]\n    dist = math.hypot(dx, dy)\n    if dist > 0:\n        e['pos'][0] += (dx / dist) * 1.5\n        e['pos'][1] += (dy / dist) * 1.5\n"],
+    ["pygame", "wave_code_draw", "for e in enemies:\n    pygame.draw.circle(screen, (255, 0, 0), (int(e['pos'][0]), int(e['pos'][1])), 10)\n"],
+
+    ["pygame", "procedural_code_init", "rooms = [{'pos': (100, 100), 'size': (150, 150)}, {'pos': (400, 150), 'size': (120, 120)}]\n"],
+    ["pygame", "procedural_code_update", "pass\n"],
+    ["pygame", "procedural_code_draw", "for r in rooms:\n    pygame.draw.rect(screen, (50, 50, 50), (r['pos'][0], r['pos'][1], r['size'][0], r['size'][1]))\n"],
+
+    ["pygame", "boss_code_init", "boss_active = False\nboss_hp = 500\nboss_pos = [320.0, 50.0]\nboss_telegraph_timer = 0\n"],
+    ["pygame", "boss_code_update", "if not boss_active and len(enemies) > 10:\n    boss_active = True\nif boss_active:\n    boss_telegraph_timer = (boss_telegraph_timer + 1) % 180\n"],
+    ["pygame", "boss_code_draw", "if boss_active:\n    pygame.draw.circle(screen, (255, 0, 255), (int(boss_pos[0]), int(boss_pos[1])), 35)\n    if boss_telegraph_timer > 120:\n        pygame.draw.circle(screen, (255, 100, 100), (int(boss_pos[0]), int(boss_pos[1])), 100, 2)\n"],
+
+    ["pygame", "status_code_init", "status_slow_multiplier = 0.5\n"],
+    ["pygame", "status_code_update", "for e in enemies:\n    if 'status_slow' in e:\n        e['pos'][0] -= 0.5\n"],
+    ["pygame", "status_code_draw", "for e in enemies:\n    if 'status_slow' in e:\n        pygame.draw.circle(screen, (0, 0, 255), (int(e['pos'][0]), int(e['pos'][1])), 12, 2)\n"],
+
+    ["pygame", "economy_code_init", "scrap = 100\ntower_cost = 50\n"],
+    ["pygame", "economy_code_update", "if m_buttons[2] and scrap >= tower_cost:\n    scrap -= tower_cost\n    towers.append({'pos': pygame.mouse.get_pos(), 'range': 120})\n"],
+    ["pygame", "economy_code_draw", "pass\n"]
   ],
   "evidence": ["pygame 2.x documentation, https://pygame.org/docs"],
   "confidence": 0.99

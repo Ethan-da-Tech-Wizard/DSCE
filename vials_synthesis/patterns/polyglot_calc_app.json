@@ -1,0 +1,28 @@
+{
+  "id": "polyglot_calc_app",
+  "concept": "Polyglot Calculator app assembler: binds an app's target_language to whichever library vial implements it, and concatenates the language banner and the calculator code block.",
+  "rules": [
+    {
+      "name": "bind-calc-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_calc_language", "?lib"]
+    },
+    {
+      "name": "assemble-polyglot-calc-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "math_calculator"],
+        ["?app", "uses_calc_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_calc_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    }
+  ],
+  "evidence": ["Language-agnostic calculator program assembly: capability/provider binding over target_language"]
+}
