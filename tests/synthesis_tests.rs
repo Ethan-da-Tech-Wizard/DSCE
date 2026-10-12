@@ -25,6 +25,9 @@ fn synthesis_kb_loads_completely() {
     let vials = load_vials_dir(vials_dir()).unwrap();
     let mut ids: Vec<&str> = vials.iter().map(|v| v.id.as_str()).collect();
     ids.sort();
+    // The GPL-licensed English dictionary vial is not shipped; ignore it if a
+    // user has downloaded it with scripts/update_dictionary.py.
+    ids.retain(|id| *id != "english_dictionary");
     assert_eq!(
         ids,
         vec![
@@ -41,7 +44,6 @@ fn synthesis_kb_loads_completely() {
             "dependency_resolution",
             "docker_container",
             "electron_framework",
-            "english_dictionary",
             "express_framework",
             "faiss_vector_search",
             "fastapi_framework",
