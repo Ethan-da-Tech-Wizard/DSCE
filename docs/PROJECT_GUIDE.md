@@ -29,7 +29,7 @@ Explicit knowledge containers and spreading activation assemble inspectable reas
 | [scripts/](../scripts/) | Build, launch, maintenance, and verification commands (5 tracked entries). |
 | [src/](../src/) | Application source and platform integration (14 tracked entries). |
 | [tests/](../tests/) | Automated checks and test fixtures (4 tracked entries). |
-| [vials_synthesis/](../vials_synthesis/) | Project-specific vials synthesis components (51 tracked entries). |
+| [vials_synthesis/](../vials_synthesis/) | Project-specific vials synthesis components (50 tracked entries). |
 
 ## Scope
 
