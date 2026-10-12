@@ -1,0 +1,44 @@
+{
+  "id": "academic_concepts",
+  "concept": "Academic and low-level computer science concepts: Open Data Structures, SICP execution models, Linux Kernel systems, and design patterns.",
+  "confidence": 1.0,
+  "evidence": [
+    "Open Data Structures (Pat Morin)",
+    "Structure and Interpretation of Computer Programs (Abelson & Sussman)",
+    "Linux Kernel Documentation (kernel.org)",
+    "Dive Into Design Patterns (Alexander Shvets)"
+  ],
+  "facts": [
+    ["treap", "is_a", "data_structure"],
+    ["treap", "complexity", "logarithmic_search"],
+    ["treap", "code_slot", "code_treap_body"],
+    
+    ["avl_tree", "is_a", "data_structure"],
+    ["avl_tree", "complexity", "strict_height_balance"],
+    ["avl_tree", "code_slot", "code_avl_tree_body"],
+    
+    ["metacircular_evaluator", "is_a", "execution_model"],
+    ["metacircular_evaluator", "uses", "environment_model"],
+    ["metacircular_evaluator", "code_slot", "code_metacircular_eval_body"],
+    
+    ["lazy_stream", "is_a", "execution_model"],
+    ["lazy_stream", "uses", "delayed_evaluation"],
+    ["lazy_stream", "code_slot", "code_lazy_stream_body"],
+    
+    ["intrusive_linked_list", "is_a", "kernel_structure"],
+    ["intrusive_linked_list", "uses", "container_of_macro"],
+    ["intrusive_linked_list", "code_slot", "code_linux_list_body"],
+    
+    ["circular_buffer_kfifo", "is_a", "kernel_structure"],
+    ["circular_buffer_kfifo", "uses", "power_of_two_mask"],
+    ["circular_buffer_kfifo", "code_slot", "code_linux_kfifo_body"],
+    
+    ["strategy_pattern", "is_a", "design_pattern"],
+    ["strategy_pattern", "category", "behavioral_pattern"],
+    ["strategy_pattern", "code_slot", "code_strategy_pattern_body"],
+    
+    ["observer_pattern", "is_a", "design_pattern"],
+    ["observer_pattern", "category", "behavioral_pattern"],
+    ["observer_pattern", "code_slot", "code_observer_pattern_body"]
+  ]
+}

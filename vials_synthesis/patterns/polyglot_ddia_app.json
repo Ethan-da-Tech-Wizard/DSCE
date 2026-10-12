@@ -1,0 +1,136 @@
+{
+  "id": "polyglot_ddia_app",
+  "concept": "Polyglot DDIA app assembler: binds an app's target_language to a library implementing it, and assembles custom programs for the recommended DDIA architecture choices.",
+  "rules": [
+    {
+      "name": "bind-ddia-language-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_ddia_language", "?lib"]
+    },
+    {
+      "name": "assemble-lsm-storage-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_storage", "lsm_tree"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_lsm_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-btree-storage-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_storage", "b_tree"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_btree_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-relational-model-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_model", "relational_model"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_relational_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-document-model-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_model", "document_model"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_document_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-hash-partitioning-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_partitioning", "hash_partitioning"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_partition_hash_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-range-partitioning-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_partitioning", "key_range_partitioning"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_partition_range_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-protobuf-encoding-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_encoding", "protobuf_encoding"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_protobuf_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-avro-encoding-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_encoding", "avro_encoding"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_avro_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-2pc-consensus-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_consensus", "two_phase_commit"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_consensus_2pc_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    },
+    {
+      "name": "assemble-raft-consensus-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "recommended_consensus", "raft_consensus"],
+        ["?app", "uses_ddia_language", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?lib", "code_consensus_raft_body", "?body"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + ?body"
+    }
+  ],
+  "evidence": ["DDIA recommendation-to-code compiler logic: binds architectural goals to concrete code templates"]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "polyglot_hybrid_app",
+  "concept": "Hybrid app assembler: compiles a program combining a game and a calculator.",
+  "rules": [
+    {
+      "name": "bind-hybrid-library",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "target_language", "?lang"],
+        ["?lib", "implements_language", "?lang"]
+      ],
+      "conclusion": ["?app", "uses_hybrid_library", "?lib"]
+    },
+    {
+      "name": "assemble-hybrid-app",
+      "premises": [
+        ["?app", "is_a", "application"],
+        ["?app", "needs", "gameboy_hybrid"],
+        ["?app", "uses_hybrid_library", "?lib"],
+        ["?lib", "code_banner", "?banner"],
+        ["?app", "ball_color", "?color"],
+        ["?app", "ball_speed", "?speed"],
+        ["?app", "calc_limit", "?limit"]
+      ],
+      "conclusion": ["?app", "code", "?code"],
+      "compute": "?code = ?banner + \"import tkinter as tk\\nimport tkinter.messagebox as messagebox\\n\\n# --- CONFIGURATION & PARAMETERS ---\\nBALL_COLOR = '\" + ?color + \"'\\nBALL_SPEED = \" + ?speed + \"\\nCALC_LIMIT = \" + ?limit + \"\\n\\n# --- APP SETUP ---\\nroot = tk.Tk()\\nroot.title('GameBoy Hybrid Console')\\nroot.geometry('450x650')\\nroot.configure(bg='#2c2c2c')\\n\\n# ==========================================\\n# PART 1: PLAYABLE PADDLE GAME\\n# ==========================================\\ngame_frame = tk.LabelFrame(root, text='Arcade: Bounce Game', bg='#2c2c2c', fg='white', font=('Arial', 12, 'bold'))\\ngame_frame.pack(pady=10, padx=10, fill='both', expand=True)\\n\\ncanvas = tk.Canvas(game_frame, width=400, height=250, bg='black', highlightthickness=0)\\ncanvas.pack(pady=5)\\n\\nball = canvas.create_oval(190, 40, 210, 60, fill=BALL_COLOR)\\npaddle = canvas.create_rectangle(160, 230, 240, 240, fill='white')\\nscore = 0\\nscore_label = tk.Label(game_frame, text='Score: 0', bg='#2c2c2c', fg='white', font=('Arial', 10, 'bold'))\\nscore_label.pack()\\n\\nball_x_speed = BALL_SPEED\\nball_y_speed = BALL_SPEED\\npaddle_speed = 20\\n\\ndef move_left(event):\\n    canvas.move(paddle, -paddle_speed, 0)\\n    pos = canvas.coords(paddle)\\n    if pos[0] < 0:\\n        canvas.coords(paddle, 0, 230, 80, 240)\\n\\ndef move_right(event):\\n    canvas.move(paddle, paddle_speed, 0)\\n    pos = canvas.coords(paddle)\\n    if pos[2] > 400:\\n        canvas.coords(paddle, 320, 230, 400, 240)\\n\\nroot.bind('<Left>', move_left)\\nroot.bind('<Right>', move_right)\\n\\ndef game_loop():\\n    global ball_x_speed, ball_y_speed, score\\n    canvas.move(ball, ball_x_speed, ball_y_speed)\\n    ball_pos = canvas.coords(ball)\\n    paddle_pos = canvas.coords(paddle)\\n\\n    if ball_pos[0] <= 0 or ball_pos[2] >= 400:\\n        ball_x_speed = -ball_x_speed\\n    if ball_pos[1] <= 0:\\n        ball_y_speed = -ball_y_speed\\n\\n    if (ball_pos[3] >= paddle_pos[1] and \\n        ball_pos[0] >= paddle_pos[0] - 10 and \\n        ball_pos[2] <= paddle_pos[2] + 10):\\n        ball_y_speed = -abs(ball_y_speed)\\n        score += 1\\n        score_label.config(text=f'Score: {score}')\\n\\n    if ball_pos[3] >= 250:\\n        canvas.coords(ball, 190, 40, 210, 60)\\n        ball_y_speed = -abs(ball_y_speed)\\n        score = 0\\n        score_label.config(text='Game Over! Score Reset to 0')\\n\\n    root.after(30, game_loop)\\n\\n# ==========================================\\n# PART 2: INTERACTIVE CALCULATOR\\n# ==========================================\\ncalc_frame = tk.LabelFrame(root, text='Calculator Console', bg='#2c2c2c', fg='white', font=('Arial', 12, 'bold'))\\ncalc_frame.pack(pady=10, padx=10, fill='both', expand=True)\\n\\ndisplay = tk.Entry(calc_frame, font=('Arial', 16), justify='right', bd=5, bg='#1e1e1e', fg='white', insertbackground='white')\\ndisplay.pack(fill='x', padx=10, pady=5)\\n\\ndef press_key(key):\\n    if key == '=':\\n        try:\\n            val = eval(display.get())\\n            if float(val) > float(CALC_LIMIT):\\n                display.delete(0, tk.END)\\n                display.insert(tk.END, 'OVER LIMIT!')\\n            else:\\n                display.delete(0, tk.END)\\n                display.insert(tk.END, str(val))\\n        except Exception:\\n            display.delete(0, tk.END)\\n            display.insert(tk.END, 'ERROR')\\n    elif key == 'C':\\n        display.delete(0, tk.END)\\n    else:\\n        display.insert(tk.END, key)\\n\\nbuttons_layout = [\\n    ['7', '8', '9', '/'],\\n    ['4', '5', '6', '*'],\\n    ['1', '2', '3', '-'],\\n    ['C', '0', '=', '+']\\n]\\n\\ngrid_frame = tk.Frame(calc_frame, bg='#2c2c2c')\\ngrid_frame.pack()\\n\\nfor r_idx, row in enumerate(buttons_layout):\\n    for c_idx, val in enumerate(row):\\n        btn = tk.Button(grid_frame, text=val, font=('Arial', 12, 'bold'), width=5, height=2,\\n                        bg='#4a4a4a', fg='white', activebackground='#6a6a6a', activeforeground='white',\\n                        command=lambda v=val: press_key(v))\\n        btn.grid(row=r_idx, column=c_idx, padx=5, pady=5)\\n\\ngame_loop()\\nroot.mainloop()\\n\""
+    }
+  ]
+}
