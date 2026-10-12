@@ -59,3 +59,6 @@ target/
 *.p12
 id_rsa*
 id_ed25519*
+
+# GPL-licensed dictionary data, downloaded on demand by scripts/update_dictionary.py
+vials_synthesis/english_dictionary.json
