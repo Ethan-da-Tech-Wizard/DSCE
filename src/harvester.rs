@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: harvester.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Semantic Harvester module translating natural language into DSCE goals.
+//          Translates high-level programming prompts into formal Datalog query goals
+//          and dynamic vocabulary triples using offline keyword parsing or prompt
+//          templates, bridging human intent to deterministic code assembly.
+// ==============================================================================
+
 //! The Semantic Harvester — the AI/DE bridge between natural language and
 //! the Datalog engine.
 //!

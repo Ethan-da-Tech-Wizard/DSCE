@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: vial.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Explicit knowledge containers (Vial) and inference rules (Rule) in Rust.
+//          Defines modular packages encapsulating ground facts, deductive rules,
+//          topological neighbor links, bibliographic citations, and confidence scores
+//          with automated constant term indexing for sparse spreading activation.
+// ==============================================================================
+
 //! Vials: the knowledge containers of the DSCE.
 //!
 //! A vial is the unit of knowledge STORAGE, the way a parameter matrix is

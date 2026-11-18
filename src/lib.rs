@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: lib.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Root library module for the DSCE Rust engine implementation.
+//          Exports modules for facts, vials, sand, deterministic compute,
+//          rayon-parallel engine flood loops, SQLite storage, proof tree
+//          rendering, JSON vial format synthesis, and semantic harvesting.
+// ==============================================================================
+
 //! Deterministic Semantic Computation Engine (DSCE) — Rust implementation.
 //!
 //! A sand-and-vials spreading-activation reasoner:

@@ -1,3 +1,12 @@
+# ==============================================================================
+# Program: gameboy_app.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Synthesized Tkinter hybrid application demonstrating DSCE code generation.
+#          Combines an arcade paddle/ball bounce game with an interactive arithmetic
+#          calculator within a unified retro console UI layout.
+# ==============================================================================
+
 # assembled by the DSCE polyglot assembler (Python)
 import tkinter as tk
 import tkinter.messagebox as messagebox

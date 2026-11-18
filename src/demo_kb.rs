@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: demo_kb.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Demonstration knowledge base implementation for DSCE Rust engine.
+//          Constructs domain vials for philosophy, biology, geometry, and
+//          measurements to illustrate cross-vial syllogistic chaining,
+//          arithmetic compute expressions, and bidirectional neighbor activation.
+// ==============================================================================
+
 //! A small demonstration knowledge base.
 //!
 //! Four vials spanning two unrelated domains, chosen so that queries

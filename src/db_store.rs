@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: db_store.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: SQLite persistence layer and dynamic vial provider for DSCE Rust engine.
+//          Manages thread-safe SQLite connection handles, persists vial metadata,
+//          axioms, and DSL compute rules, and executes high-performance inverted
+//          term lookups during spreading activation floods.
+// ==============================================================================
+
 //! Database-backed storage for DSCE vials.
 //!
 //! Persists vials (facts, rules, neighbors, evidence, term index) in

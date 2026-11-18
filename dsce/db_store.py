@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: db_store.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: SQLite storage backend for DSCE knowledge vials and term indices.
+#          Manages relational schema creation (vials, facts, rules, term_index),
+#          vial serialization/deserialization, inverted term lookup queries,
+#          and dynamic on-demand vial loading during activation floods.
+# ==============================================================================
+
 """Database-backed storage for DSCE vials.
 
 Allows persistence of vials (facts, rules, neighbors, terms) in SQLite
@@ -13,15 +23,19 @@ from typing import Optional
 from dsce.facts import Fact, Pattern, Term
 from dsce.vial import Rule, Vial
 
-
 class SqliteVialStore:
+    """
+    SQLite persistence manager for DSCE vials, facts, rules, and inverted term indices.
+    """
     def __init__(self, db_path: str):
         self.db_path = db_path
         self._init_db()
 
     def _init_db(self):
+        """Initializes relational tables and performance indexes in SQLite."""
         conn = sqlite3.connect(self.db_path)
         try:
+            # Step 1: Create primary vial metadata table
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS vials (
                     id TEXT PRIMARY KEY,
@@ -31,6 +45,7 @@ class SqliteVialStore:
                     neighbors TEXT
                 )
             """)
+            # Step 2: Create ground axiom facts table
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS facts (
                     vial_id TEXT,
@@ -40,6 +55,7 @@ class SqliteVialStore:
                     FOREIGN KEY(vial_id) REFERENCES vials(id)
                 )
             """)
+            # Step 3: Create inference rules table
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS rules (
                     vial_id TEXT,
@@ -51,6 +67,7 @@ class SqliteVialStore:
                     FOREIGN KEY(vial_id) REFERENCES vials(id)
                 )
             """)
+            # Step 4: Create term-to-vial inverted index table
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS term_index (
                     term TEXT,
@@ -58,7 +75,7 @@ class SqliteVialStore:
                     PRIMARY KEY(term, vial_id)
                 )
             """)
-            # Indexes for faster lookups
+            # Step 5: Establish database indexes for high-speed term lookup
             conn.execute("CREATE INDEX IF NOT EXISTS idx_facts_vial ON facts(vial_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_rules_vial ON rules(vial_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_term_index ON term_index(term)")
@@ -66,9 +83,12 @@ class SqliteVialStore:
             conn.close()
 
     def save_vial(self, vial: Vial):
+        """
+        Persists a complete Vial object (metadata, facts, rules, and terms) into SQLite.
+        """
         conn = sqlite3.connect(self.db_path)
         try:
-            # Save vial metadata
+            # Step 1: Save or replace vial metadata record
             conn.execute(
                 "INSERT OR REPLACE INTO vials (id, concept, evidence, confidence, neighbors) VALUES (?, ?, ?, ?, ?)",
                 (
@@ -80,7 +100,7 @@ class SqliteVialStore:
                 )
             )
             
-            # Save facts
+            # Step 2: Overwrite ground facts associated with vial
             conn.execute("DELETE FROM facts WHERE vial_id = ?", (vial.id,))
             for fact in vial.facts:
                 conn.execute(
@@ -88,7 +108,7 @@ class SqliteVialStore:
                     (vial.id, str(fact[0]), str(fact[1]), str(fact[2]))
                 )
                 
-            # Save rules
+            # Step 3: Overwrite inference rules associated with vial
             conn.execute("DELETE FROM rules WHERE vial_id = ?", (vial.id,))
             for rule in vial.rules:
                 compute_body = getattr(rule, "_compute_body", None)
@@ -104,7 +124,7 @@ class SqliteVialStore:
                     )
                 )
                 
-            # Rebuild term index for this vial
+            # Step 4: Rebuild inverted term index for this vial
             conn.execute("DELETE FROM term_index WHERE vial_id = ?", (vial.id,))
             for term in vial.terms():
                 conn.execute(
@@ -116,6 +136,7 @@ class SqliteVialStore:
             conn.close()
 
     def get_vial_ids_for_term(self, term: Term) -> tuple[str, ...]:
+        """Queries inverted term index to find all vial IDs mentioning the term."""
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -125,11 +146,12 @@ class SqliteVialStore:
             conn.close()
 
     def load_vial(self, vial_id: str) -> Vial:
+        """Loads and reconstructs a Vial object from SQLite records."""
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
             
-            # Get metadata
+            # Step 1: Retrieve vial metadata
             cursor.execute("SELECT concept, evidence, confidence, neighbors FROM vials WHERE id = ?", (vial_id,))
             row = cursor.fetchone()
             if not row:
@@ -138,13 +160,13 @@ class SqliteVialStore:
             evidence = tuple(json.loads(evidence_json))
             neighbors = tuple(json.loads(neighbors_json))
             
-            # Get facts
+            # Step 2: Retrieve and parse facts
             cursor.execute("SELECT subject, predicate, object FROM facts WHERE vial_id = ?", (vial_id,))
             facts = []
             for r in cursor.fetchall():
                 facts.append((self._parse_term(r[0]), self._parse_term(r[1]), self._parse_term(r[2])))
             
-            # Get rules
+            # Step 3: Retrieve and parse inference rules
             cursor.execute("SELECT name, premises, conclusion, compute_body, confidence FROM rules WHERE vial_id = ?", (vial_id,))
             rules = []
             for r in cursor.fetchall():
@@ -183,6 +205,7 @@ class SqliteVialStore:
             conn.close()
 
     def _parse_term(self, val_str: str) -> Term:
+        """Helper to cast serialized term strings into typed primitives."""
         if not isinstance(val_str, str):
             return val_str
         if val_str.lower() in ("true", "false"):
@@ -196,4 +219,3 @@ class SqliteVialStore:
         except ValueError:
             pass
         return val_str
-

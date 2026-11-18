@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: json_vials.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: JSON vial serialization and loader subsystem for DSCE.
+//          Parses declarative JSON knowledge definitions (patterns, libraries),
+//          deserializes typed terms, validates DSL compute expressions, and
+//          constructs in-memory Vial and Rule models from directory structures.
+// ==============================================================================
+
 //! Normalized JSON vials — knowledge as data files.
 //!
 //! The synthesis knowledge base (`vials_synthesis/`) stores vials as plain

@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: sand.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Activation particle structures (Grain) for DSCE spreading-activation.
+#          Models immutable sand grains carrying active constants, emission
+#          provenance, and creation ticks to govern dynamic vial awakening while
+#          maintaining activation sparsity across modular domains.
+# ==============================================================================
+
 """Sand: the activation particles of the DSCE.
 
 Sand is NOT data — it is activation, the thing that decides which knowledge

@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: vial.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Modular knowledge container (Vial) and inference rule (Rule) models.
+#          Defines self-contained concept packages encapsulating ground axioms,
+#          deductive rules, confidence metrics, topological neighbor links,
+#          bibliographic evidence, and automated term indexing for activation.
+# ==============================================================================
+
 """Vials: the knowledge containers of the DSCE.
 
 A vial is the unit of knowledge STORAGE, the way a parameter matrix is the

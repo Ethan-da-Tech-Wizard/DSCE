@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: synthesis_tests.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Integration test suite for the DSCE generic software assembler.
+//          Validates synthesis knowledge base loading, offline semantic keyword
+//          harvesting, and end-to-end program synthesis across multiple programming
+//          languages and architectural design patterns.
+// ==============================================================================
+
 //! Integration tests for the generic software assembler: JSON vials,
 //! the Semantic Harvester, and end-to-end program synthesis.
 

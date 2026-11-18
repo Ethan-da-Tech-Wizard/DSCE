@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: test_engine.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Unit test suite for DSCE core engine and unification semantics.
+#          Tests pattern variable binding, existing binding consistency, mismatch
+#          rejections, multi-vial inference chains, deterministic arithmetic
+#          computations, proof rendering, and activation sparsity.
+# ==============================================================================
+
 import unittest
 
 from dsce.demo_kb import build_engine

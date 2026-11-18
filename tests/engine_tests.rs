@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: engine_tests.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Integration test suite for the DSCE Rust reasoning engine.
+//          Validates multi-vial inference chains, deterministic arithmetic
+//          computation DSL, activation sparsity, contradiction detection,
+//          and SQLite round-trip persistence and query execution.
+// ==============================================================================
+
 //! Integration tests mirroring the Python prototype's test suite
 //! (tests/test_engine.py and tests/test_new_features.py).
 

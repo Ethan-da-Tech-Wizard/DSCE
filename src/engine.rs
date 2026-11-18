@@ -1,3 +1,14 @@
+// ==============================================================================
+// Program: engine.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Parallel deterministic spreading-activation reasoning engine for DSCE.
+//          Orchestrates multi-tick flood loops: seeds initial activation grains,
+//          wakes term-indexed and neighbor vials, performs rayon-parallel rule
+//          evaluation over immutable working memory, detects contradictory facts,
+//          and synthesizes complete proof trees.
+// ==============================================================================
+
 //! The DSCE flood engine.
 //!
 //! Reasoning proceeds in discrete ticks:

@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: facts.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Core semantic vocabulary, triple representations, and unification logic.
+#          Defines Term, Fact, Pattern, and Bindings structures. Implements pure
+#          unification algorithms matching variables (?var) against ground facts,
+#          pattern instantiation, term extraction, and deterministic sort keys.
+# ==============================================================================
+
 """Facts, patterns, and unification — the vocabulary of the whole engine.
 
 EVERYTHING the DSCE knows or asks is expressed as a triple:

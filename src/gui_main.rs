@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: gui_main.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Slint graphical user interface application entry point for DSCE Studio.
+//          Binds native Slint UI controls to DSCE engine synthesis, handles
+//          interactive goal querying, renders multi-level proof trees, displays
+//          assembled source code, and runs generated code inside sandbox processes.
+// ==============================================================================
+
 slint::include_modules!();
 
 use std::fs;

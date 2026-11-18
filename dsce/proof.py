@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: proof.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Proof tree construction and rendering for DSCE.
+#          Attaches Derivation bookkeeping records to every derived fact, walks
+#          derivation trees backwards from conclusions to source axioms, and
+#          renders hierarchical ASCII proof trees citing rules and evidence.
+# ==============================================================================
+
 """Proof construction and rendering — how the DSCE shows its work.
 
 THE KEY DESIGN DECISION in this file: proofs are not built as a separate

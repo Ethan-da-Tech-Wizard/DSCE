@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: proof.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Proof construction, derivation records, and tree rendering for DSCE.
+//          Tracks derivation provenance for all asserted axioms and derived rules,
+//          reconstructs deductive reasoning chains from answers back to base facts,
+//          and renders indented ASCII proof trees with confidence metrics.
+// ==============================================================================
+
 //! Proof construction and rendering — how the DSCE shows its work.
 //!
 //! THE KEY DESIGN DECISION in this file: proofs are not built as a separate

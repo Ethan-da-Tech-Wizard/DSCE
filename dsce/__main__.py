@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: __main__.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Interactive command-line driver for the DSCE Python engine.
+#          Parses subject-predicate-object query goals from CLI arguments,
+#          supports SQLite vial store connections (--db), handles primitive term
+#          type casting (int, float, bool, ?variable), and prints proof trees.
+# ==============================================================================
+
 """Run the DSCE demo:  python -m dsce  [subject predicate object]
 
 With no arguments, runs a showcase of queries against the demo knowledge
@@ -17,28 +27,32 @@ from dsce.demo_kb import build_engine
 from dsce.engine import Engine
 from dsce.db_store import SqliteVialStore
 
-
 def parse_term(token: str):
-    """Interpret one command-line token as a triple term.
-
-    Order matters: "true"/"false" become booleans, then int is tried,
-    then float, and anything left stays a string (including ?variables —
-    the engine recognizes those by their leading '?', not here).
     """
+    Interpret one command-line token as a triple term.
+    Converts booleans, integers, floats, and defaults to string.
+    """
+    # Step 1: Check boolean literals
     if token.lower() in ("true", "false"):
         return token.lower() == "true"
+    # Step 2: Try parsing integer
     try:
         return int(token)
     except ValueError:
         pass
+    # Step 3: Try parsing float
     try:
         return float(token)
     except ValueError:
         pass
+    # Step 4: Fall back to string (including ?variable names)
     return token
 
-
 def main(argv: list) -> int:
+    """
+    Parses CLI flags, prepares engine instance, and runs query goals.
+    """
+    # Step 1: Parse optional database flags
     db_path = None
     if argv and argv[0] == "--db":
         if len(argv) < 2:
@@ -47,12 +61,14 @@ def main(argv: list) -> int:
         db_path = argv[1]
         argv = argv[2:]
 
+    # Step 2: Instantiate engine with SQLite storage or built-in demo KB
     if db_path:
         store = SqliteVialStore(db_path)
         engine = Engine(store=store)
     else:
         engine = build_engine()
 
+    # Step 3: Parse goal query from remaining arguments
     if len(argv) == 3:
         goals = [tuple(parse_term(t) for t in argv)]
     elif not argv:
@@ -72,13 +88,12 @@ def main(argv: list) -> int:
         print("  python -m dsce --db <db_path> [subject predicate object]")
         return 2
 
+    # Step 4: Execute each goal query and display summary and proofs
     for i, goal in enumerate(goals):
         if i:
             print("\n" + "=" * 72 + "\n")
         print(engine.ask(goal).summary())
     return 0
 
-
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
-

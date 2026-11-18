@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: main.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Command-line interface driver for the DSCE Rust engine.
+//          Parses CLI parameters, manages database seeding and queries,
+//          evaluates triple query goals, loads JSON vial synthesis directories,
+//          and drives Semantic Harvester software code generation.
+// ==============================================================================
+
 //! DSCE command-line interface.
 //!
 //! ```text

@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: sand.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Sand activation particles and provenance tracking for DSCE Rust engine.
+//          Defines Grain data structure carrying activation constants, originating
+//          vials, and creation ticks to drive spreading activation throughout the
+//          knowledge graph while preventing graph-wide predicate flood.
+// ==============================================================================
+
 //! Sand: the activation particles of the DSCE.
 //!
 //! Sand is NOT data — it is activation, the thing that decides which

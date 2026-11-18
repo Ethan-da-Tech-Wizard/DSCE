@@ -1,12 +1,23 @@
+# ==============================================================================
+# Program: update_dictionary.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Updates DSCE English dictionary vial from upstream GCIDE JSON.
+#          Fetches dictionary_minimal.json, formats word definitions into
+#          ground triples, saves the updated vial, and triggers TSV export.
+# ==============================================================================
+
 import urllib.request
 import json
 import os
 import sys
 
 def download_and_format():
+    """Downloads upstream GCIDE JSON, normalizes definitions, and exports TSV."""
     url = "https://raw.githubusercontent.com/aviaryan/gcide-dictionary-json/master/dictionary_minimal.json"
     json_dest = "vials_synthesis/english_dictionary.json"
     
+    # Step 1: Download GCIDE payload over HTTPS
     print(f"Downloading GCIDE dictionary from {url}...")
     try:
         response = urllib.request.urlopen(url)
@@ -18,7 +29,7 @@ def download_and_format():
     print("Parsing downloaded JSON...")
     raw_dict = json.loads(raw_data)
     
-    # Format to DSCE vial structure
+    # Step 2: Format into standard DSCE vial schema
     vial = {
         "id": "english_dictionary",
         "concept": "Collaborative International Dictionary of English (GCIDE)",
@@ -33,15 +44,15 @@ def download_and_format():
     for word, definition in raw_dict.items():
         if definition:
             defn = definition.strip()
-            # Clean up potential escape/formatting quirks
             vial["facts"].append([word.lower(), "definition", defn])
             
+    # Step 3: Serialize JSON vial to disk
     print(f"Writing to {json_dest}...")
-    with open(json_dest, "w") as f:
+    with open(json_dest, "w", encoding="utf-8") as f:
         json.dump(vial, f, indent=2)
         
+    # Step 4: Rebuild TSV cache
     print("Vial update complete. Rebuilding TSV...")
-    # Import and run tsv builder
     sys.path.append(os.path.abspath(os.path.dirname(__file__)))
     import build_dictionary_tsv
     build_dictionary_tsv.export_to_tsv()

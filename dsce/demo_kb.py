@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: demo_kb.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Showcase demonstration knowledge base for DSCE.
+#          Defines modular vials across philosophy/biology (classical syllogisms
+#          and cross-vial deduction chains) and plane geometry/measurements
+#          (derived geometric properties and arithmetic lambdas).
+# ==============================================================================
+
 """A small demonstration knowledge base.
 
 Four vials spanning two unrelated domains, chosen so that queries visibly
@@ -29,10 +39,13 @@ from __future__ import annotations
 from dsce.engine import Engine
 from dsce.vial import Rule, Vial
 
-
 def build_engine() -> Engine:
+    """
+    Constructs an in-memory Engine pre-populated with demo vials.
+    """
     engine = Engine()
 
+    # Step 1: Add philosophers vial (ground facts regarding historical humans)
     engine.add_vial(Vial(
         id="philosophers",
         concept="Classical philosophers",
@@ -46,6 +59,7 @@ def build_engine() -> Engine:
         confidence=0.99,
     ))
 
+    # Step 2: Add biology vial (rules inferring mammal classification and mortality)
     engine.add_vial(Vial(
         id="biology",
         concept="Basic biology",
@@ -65,6 +79,7 @@ def build_engine() -> Engine:
         evidence=("Campbell Biology, ch. 32",),
     ))
 
+    # Step 3: Add geometry vial (deductive rules and arithmetic area computation)
     engine.add_vial(Vial(
         id="geometry",
         concept="Plane geometry",
@@ -107,6 +122,7 @@ def build_engine() -> Engine:
         evidence=("Euclid, Elements, Book I",),
     ))
 
+    # Step 4: Add measurements vial (ground facts for surveyed physical dimensions)
     engine.add_vial(Vial(
         id="measurements",
         concept="Surveyed measurements",

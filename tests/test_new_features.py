@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: test_new_features.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Unit tests for advanced DSCE reasoning and storage capabilities.
+#          Validates functional predicate contradiction detection, lexical
+#          specificity ordering, SQLite vial round-trip serialization, and
+#          dynamic on-demand vial loading during query evaluation.
+# ==============================================================================
+
 import unittest
 import os
 import tempfile

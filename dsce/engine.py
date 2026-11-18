@@ -1,3 +1,14 @@
+# ==============================================================================
+# Program: engine.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Core deterministic spreading-activation reasoning engine for DSCE.
+#          Executes query goals in discrete tick iterations: seeds sand grains,
+#          wakes term-indexed and neighbor vials, activates axioms into working
+#          memory, evaluates rule premises, synthesizes proof trees, and halts
+#          at mathematical fixpoint.
+# ==============================================================================
+
 """The DSCE flood engine.
 
 Reasoning proceeds in discrete ticks:

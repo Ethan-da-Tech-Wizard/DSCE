@@ -1,3 +1,12 @@
+# ==============================================================================
+# Program: seed_taxonomy_grammar.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Seeds DSCE SQLite database with biological taxonomy and grammar rules.
+#          Populates domain vials for Animalia, Plantae, Fungi, Bacteria, parts
+#          of speech lexicons, and syntactic sentence parsing rules.
+# ==============================================================================
+
 """Ingestion script to seed DSCE SQLite database with taxonomy and grammar data.
 
 Seeds:

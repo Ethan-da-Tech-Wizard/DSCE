@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: compute.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Deterministic rule computation engine and expression DSL for DSCE.
+//          Parses and safely evaluates mathematical and string concatenation
+//          expressions (?a = ?w * ?h) without unsafe eval, supporting both
+//          serializable AST expressions and native Rust closures.
+// ==============================================================================
+
 //! Deterministic, serializable `compute` hooks for rules.
 //!
 //! The Python prototype attached raw lambdas to rules and `eval()`ed their

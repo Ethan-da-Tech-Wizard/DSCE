@@ -1,3 +1,13 @@
+// ==============================================================================
+// Program: facts.rs
+// Programmer: Ethan-da-Tech-Wizard
+// Last Modified: November 18, 2026
+// Purpose: Core semantic vocabulary, triple terms, and unification algorithms in Rust.
+//          Defines Term, Fact, Pattern, and Bindings data structures. Implements
+//          pattern unification, variable substitutions, constant term extraction,
+//          and lexical specificity comparisons.
+// ==============================================================================
+
 //! Facts, patterns, and unification — the vocabulary of the whole engine.
 //!
 //! EVERYTHING the DSCE knows or asks is expressed as a triple:

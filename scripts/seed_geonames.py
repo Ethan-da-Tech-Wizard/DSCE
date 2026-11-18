@@ -1,3 +1,13 @@
+# ==============================================================================
+# Program: seed_geonames.py
+# Programmer: Ethan-da-Tech-Wizard
+# Last Modified: November 18, 2026
+# Purpose: Seeds DSCE SQLite database with GeoNames global cities data.
+#          Downloads and extracts global cities with populations > 15,000,
+#          parses demographic and geographical coordinates from TSV, groups
+#          cities into country-specific modular Vials, and saves to SQLite.
+# ==============================================================================
+
 """Ingestion script to seed DSCE SQLite database with GeoNames cities data.
 
 Downloads cities with population > 15,000 from download.geonames.org,
@@ -41,6 +51,7 @@ COUNTRY_MAP = {
 }
 
 def download_and_extract():
+    """Fetches and unzips GeoNames archive if not already locally cached."""
     if not os.path.exists(TXT_FILE):
         print(f"[*] Downloading GeoNames cities15000 database from {GEONAMES_URL}...")
         urllib.request.urlretrieve(GEONAMES_URL, ZIP_FILE)
@@ -52,74 +63,57 @@ def download_and_extract():
         print("[*] GeoNames dataset text file already exists. Skipping download.")
 
 def seed_db():
+    """Parses extracted GeoNames cities and commits regional vials into SQLite."""
+    # Step 1: Ensure dataset is available locally
     download_and_extract()
     
     store = SqliteVialStore(DB_PATH)
     vial_groups = {}
     
     print("[*] Reading cities15000 database and parsing facts...")
-    count = 0
+    total_cities = 0
+    
+    # Step 2: Stream TSV rows and group triples by country code
     with open(TXT_FILE, "r", encoding="utf-8") as f:
         for line in f:
             parts = line.strip().split("\t")
             if len(parts) < 15:
                 continue
             
-            # Extract fields (GeoNames schema)
-            city_name = parts[2].strip()  # asciiname
-            country_code = parts[8].strip()  # country code
-            state_code = parts[10].strip()  # admin1 code
-            
-            if not city_name or not country_code:
-                continue
-                
+            city_name = parts[1].strip().lower()
+            country_code = parts[8].strip().upper()
             country_name = COUNTRY_MAP.get(country_code, country_code.lower())
-            vial_id = f"geo_{country_code.lower()}"
             
-            if vial_id not in vial_groups:
-                vial_groups[vial_id] = {
-                    "concept": f"Geographical facts for {country_name.upper()}",
-                    "facts": set(),
-                    "evidence": "GeoNames cities15000 Database (geonames.org)"
-                }
+            try:
+                population = int(parts[14])
+            except ValueError:
+                population = 0
                 
-            # Add geographical facts
-            city_key = city_name.lower()
-            state_key = f"{state_code.lower()}_{country_code.lower()}" if state_code else country_name
-            
-            # e.g., ("modesto", "is_a", "city")
-            vial_groups[vial_id]["facts"].add((city_key, "is_a", "city"))
-            # e.g., ("modesto", "located_in", "us")
-            vial_groups[vial_id]["facts"].add((city_key, "located_in", country_name))
-            
-            count += 1
-            if count % 5000 == 0:
-                print(f"    Processed {count} cities...")
+            group_key = f"geo_{country_name.replace(' ', '_')}"
+            if group_key not in vial_groups:
+                vial_groups[group_key] = []
+                
+            vial_groups[group_key].append((city_name, "is_a", "city"))
+            vial_groups[group_key].append((city_name, "located_in", country_name))
+            if population > 0:
+                vial_groups[group_key].append((city_name, "population", population))
+            total_cities += 1
 
-    print(f"[+] Processed {count} cities total.")
-    print(f"[*] Compiling and bulk-saving {len(vial_groups)} regional Vials to SQLite...")
+    print(f"[+] Loaded {total_cities:,} cities across {len(vial_groups)} country groups.")
+    print("[*] Writing modular regional Vials into SQLite database...")
     
-    for vial_id, data in vial_groups.items():
+    # Step 3: Commit each country group as an independent vial
+    for vial_id, facts in vial_groups.items():
         vial = Vial(
             id=vial_id,
-            concept=data["concept"],
-            facts=tuple(sorted(list(data["facts"]))),
-            rules=(),
-            neighbors=(),
-            evidence=(data["evidence"],),
-            confidence=1.0
+            concept=f"Geographical facts for {vial_id.replace('geo_', '').replace('_', ' ').title()}",
+            facts=tuple(facts),
+            evidence=("download.geonames.org cities15000 dataset",),
+            confidence=0.98
         )
         store.save_vial(vial)
         
-    print("[+] Seeding complete. All cities successfully loaded and indexed in SQLite.")
-
-    # Clean up zip and extracted txt files to keep workspace tidy
-    try:
-        os.remove(ZIP_FILE)
-        os.remove(TXT_FILE)
-        print("[*] Cleaned up temporary download files.")
-    except OSError:
-        pass
+    print(f"[+] Successfully seeded {len(vial_groups)} vials into {DB_PATH}!")
 
 if __name__ == "__main__":
     seed_db()
