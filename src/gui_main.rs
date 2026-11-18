@@ -1,3 +1,8 @@
+// Program: DSCE - gui_main.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Slint desktop front end: harvests a request, floods the vial network, shows activated vials, assembled code and proof tree, and can run the generated code locally.
+// Pulls in the Rust types generated at build time from the Slint UI file (AppWindow, VialInfo, ProofLine).
 slint::include_modules!();
 
 use std::fs;
@@ -11,6 +16,7 @@ use dsce::facts::Term;
 use dsce::harvester::harvest_offline;
 use dsce::json_vials::engine_from_dir;
 
+/// Launch the desktop window: load the vial library, wire up the Synthesize and Run buttons, and run the UI loop.
 fn main() -> Result<(), slint::PlatformError> {
     // 1. Load Vials from the synthesis directory
     let vials_dir = "vials_synthesis";
@@ -87,6 +93,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
         // Format and render Datalog Proof Tree
         let ui_proof = Rc::new(VecModel::default());
+        // The proof lines are recovered from the text summary: only lines after an "answer N" header are kept.
         let lines = result.summary().split('\n').map(|s| s.to_string()).collect::<Vec<String>>();
         
         let mut in_answers = false;
@@ -107,6 +114,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
             if in_answers && !line.trim().is_empty() {
                 // Determine depth based on branch characters
+                // Depth is estimated from the tree-drawing prefix (3 characters per level); the prefix is then stripped from the text.
                 let branch_chars = line.chars().take_while(|c| *c == '├' || *c == '─' || *c == '│' || *c == '└' || c.is_whitespace()).count();
                 let branch_bytes = line.char_indices()
                     .skip_while(|(_, c)| *c == '├' || *c == '─' || *c == '│' || *c == '└' || c.is_whitespace())
@@ -114,6 +122,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     .next()
                     .unwrap_or(line.len());
                 let text = line[branch_bytes..].trim().to_string();
+                // Lines naming a rule firing are highlighted as rules; axiom lines are not.
                 let is_rule = text.contains("[by rule");
                 
                 ui_proof.push(ProofLine {
@@ -159,6 +168,7 @@ fn main() -> Result<(), slint::PlatformError> {
             }
         }
 
+        // Map the chosen language to a file extension, command and fixed leading arguments.
         let (file_ext, cmd_name, cmd_args) = if lang_lower.contains("python") {
             ("py", "python3", vec![])
         } else if lang_lower.contains("go") {
@@ -187,6 +197,8 @@ fn main() -> Result<(), slint::PlatformError> {
         fs::write(&file_path, code_str).unwrap();
 
         // Run execution command
+        // Compiled languages are built first and then run; interpreted ones are run directly. Output is stdout then stderr.
+        // The code runs locally with the user's own toolchains; this program does not isolate it.
         let output = if file_ext == "rs" {
             let binary = scratch_dir.join("temp_rust_bin");
             let build = Command::new("rustc")
@@ -243,6 +255,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let out = child.wait_with_output().unwrap();
             String::from_utf8_lossy(&out.stdout).to_string() + &String::from_utf8_lossy(&out.stderr)
         } else {
+            // (interpreted languages: pass the temp file to the interpreter)
             // Script languages
             let mut args = cmd_args;
             args.push(file_path.to_str().unwrap());

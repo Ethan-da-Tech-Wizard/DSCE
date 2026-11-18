@@ -1,3 +1,7 @@
+# Program: DSCE - seed_taxonomy_grammar.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Seeds the SQLite store with biological taxonomy vials, an English parts-of-speech lexicon, and syntactic grammar rules.
 """Ingestion script to seed DSCE SQLite database with taxonomy and grammar data.
 
 Seeds:
@@ -18,11 +22,14 @@ from dsce.vial import Vial, Rule
 
 
 def seed_taxonomy_and_grammar():
+    """Build the taxonomy, lexicon and grammar-rule vials and save each to the SQLite store."""
+    # Target database file, relative to the current working directory.
     db_path = "dsce.sqlite"
     store = SqliteVialStore(db_path)
     
     print("[*] Preparing biological taxonomy data...")
     
+    # Taxonomy facts use ('x', 'is_a', rank) for the rank and ('x', 'located_in', parent) for the parent group.
     # 1. Animals Vial (tax_animalia)
     animal_facts = (
         ("animalia", "is_a", "kingdom"),
@@ -274,6 +281,7 @@ def seed_taxonomy_and_grammar():
                 ("?word", "part_of_speech", "noun"),
             ),
             conclusion=("?word", "is_a_gerund", "?is_gerund"),
+            # compute hook: flag the word as a gerund when it ends in 'ing'
             compute=lambda b: {"?is_gerund": str(b["?word"]).endswith("ing")}
         ),
     )

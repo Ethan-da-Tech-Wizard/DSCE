@@ -1,3 +1,7 @@
+# Program: DSCE - facts.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Core vocabulary of the engine: triples, variables, unification, substitution and deterministic sort keys.
 """Facts, patterns, and unification — the vocabulary of the whole engine.
 
 EVERYTHING the DSCE knows or asks is expressed as a triple:
@@ -145,6 +149,7 @@ def is_more_specific(term1: Term, term2: Term, wm: dict = None) -> bool:
         
     # 2. Taxonomic specialization (is_a paths in working memory)
     if wm is not None:
+        # Breadth-first walk up the is_a links starting from term1.
         visited = set()
         queue = [term1]
         while queue:

@@ -1,3 +1,7 @@
+// Program: DSCE - db_store.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: SQLite persistence for vials (metadata, facts, rules with serialized compute source, term index) and on-demand vial loading by term.
 //! Database-backed storage for DSCE vials.
 //!
 //! Persists vials (facts, rules, neighbors, evidence, term index) in
@@ -36,7 +40,9 @@ pub enum StoreError {
     Encoding(String),
 }
 
+// Human-readable error messages.
 impl std::fmt::Display for StoreError {
+    /// Render the error as a short message naming its source.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             StoreError::Sqlite(e) => write!(f, "sqlite error: {e}"),
@@ -45,20 +51,26 @@ impl std::fmt::Display for StoreError {
     }
 }
 
+// Lets StoreError be used with `?` and as a boxed standard error.
 impl std::error::Error for StoreError {}
 
+// Allows `?` to convert SQLite errors into StoreError automatically.
 impl From<rusqlite::Error> for StoreError {
+    /// Wrap a SQLite error.
     fn from(e: rusqlite::Error) -> StoreError {
         StoreError::Sqlite(e)
     }
 }
 
+/// Result alias used by every fallible store operation.
 pub type StoreResult<T> = Result<T, StoreError>;
 
+/// SQLite-backed vial store; the single connection is guarded by a mutex so the store can be shared across threads.
 pub struct SqliteVialStore {
     conn: Mutex<Connection>,
 }
 
+// Opening, schema, saving and loading.
 impl SqliteVialStore {
     /// Open (or create) the database at `path` and ensure the schema exists.
     pub fn open(path: impl AsRef<Path>) -> StoreResult<SqliteVialStore> {
@@ -74,6 +86,7 @@ impl SqliteVialStore {
         Ok(SqliteVialStore { conn: Mutex::new(conn) })
     }
 
+    /// Create the vials, facts, rules and term_index tables and their lookup indexes if missing.
     fn init_schema(conn: &Connection) -> StoreResult<()> {
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS vials (
@@ -336,6 +349,7 @@ fn term_to_json(term: &Term) -> Value {
     }
 }
 
+/// Decode a JSON value (string, bool or number) into a typed term.
 pub(crate) fn term_from_json(value: &Value) -> StoreResult<Term> {
     match value {
         Value::String(s) => Ok(Term::str(s.clone())),
@@ -353,6 +367,7 @@ pub(crate) fn term_from_json(value: &Value) -> StoreResult<Term> {
     }
 }
 
+/// Decode a 3-element JSON array into a (subject, predicate, object) term triple.
 pub(crate) fn triple_from_json(value: &Value) -> StoreResult<(Term, Term, Term)> {
     let items = value
         .as_array()
@@ -365,10 +380,12 @@ pub(crate) fn triple_from_json(value: &Value) -> StoreResult<(Term, Term, Term)>
     ))
 }
 
+// Unit tests for term encoding.
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// Text values decode to the expected term types (string, int, float, bool).
     #[test]
     fn term_db_round_trip() {
         assert_eq!(term_from_db("socrates"), Term::str("socrates"));

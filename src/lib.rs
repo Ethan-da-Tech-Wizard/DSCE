@@ -1,3 +1,7 @@
+// Program: DSCE - lib.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Crate root: declares the DSCE library modules.
 //! Deterministic Semantic Computation Engine (DSCE) — Rust implementation.
 //!
 //! A sand-and-vials spreading-activation reasoner:

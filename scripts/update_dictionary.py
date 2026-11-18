@@ -1,9 +1,16 @@
+# Program: DSCE - update_dictionary.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Downloads the GCIDE-derived dictionary JSON, rewrites the english_dictionary vial file from it, and rebuilds the TSV export.
+"""Refresh the english_dictionary vial from the GCIDE JSON download and regenerate the TSV."""
+
 import urllib.request
 import json
 import os
 import sys
 
 def download_and_format():
+    """Download the dictionary, convert entries to definition triples, save the vial, rebuild the TSV."""
     url = "https://raw.githubusercontent.com/aviaryan/gcide-dictionary-json/master/dictionary_minimal.json"
     json_dest = "vials_synthesis/english_dictionary.json"
     

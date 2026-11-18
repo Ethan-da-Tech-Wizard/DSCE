@@ -1,3 +1,7 @@
+// Program: DSCE - vial.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Defines Rule (inference step with optional compute hook) and Vial (knowledge container), with builder-style constructors.
 //! Vials: the knowledge containers of the DSCE.
 //!
 //! A vial is the unit of knowledge STORAGE, the way a parameter matrix is
@@ -41,6 +45,7 @@ pub struct Rule {
     pub confidence: f64,
 }
 
+// Builder-style constructors for rules.
 impl Rule {
     /// A rule with no compute hook and full confidence.
     pub fn new(name: impl Into<String>, premises: Vec<Pattern>, conclusion: Pattern) -> Rule {
@@ -53,11 +58,13 @@ impl Rule {
         }
     }
 
+    /// Attach a compute hook and return the rule.
     pub fn with_compute(mut self, compute: Compute) -> Rule {
         self.compute = Some(compute);
         self
     }
 
+    /// Set the rule's own confidence and return the rule.
     pub fn with_confidence(mut self, confidence: f64) -> Rule {
         self.confidence = confidence;
         self
@@ -87,7 +94,9 @@ pub struct Vial {
     pub confidence: f64,
 }
 
+// Builder-style constructors for vials.
 impl Vial {
+    /// An empty vial with full confidence; fill it using the `with_*` methods.
     pub fn new(id: impl Into<String>, concept: impl Into<String>) -> Vial {
         Vial {
             id: id.into(),
@@ -100,26 +109,31 @@ impl Vial {
         }
     }
 
+    /// Set the axiom facts and return the vial.
     pub fn with_facts(mut self, facts: Vec<Fact>) -> Vial {
         self.facts = facts;
         self
     }
 
+    /// Set the rules and return the vial.
     pub fn with_rules(mut self, rules: Vec<Rule>) -> Vial {
         self.rules = rules;
         self
     }
 
+    /// Set the neighbor vial ids (copied from string slices) and return the vial.
     pub fn with_neighbors(mut self, neighbors: Vec<&str>) -> Vial {
         self.neighbors = neighbors.into_iter().map(String::from).collect();
         self
     }
 
+    /// Set the evidence sources (copied from string slices) and return the vial.
     pub fn with_evidence(mut self, evidence: Vec<&str>) -> Vial {
         self.evidence = evidence.into_iter().map(String::from).collect();
         self
     }
 
+    /// Set the vial's overall confidence and return it.
     pub fn with_confidence(mut self, confidence: f64) -> Vial {
         self.confidence = confidence;
         self
@@ -150,11 +164,13 @@ impl Vial {
     }
 }
 
+// Unit tests for vial term collection.
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::facts::Term;
 
+    /// A vial's term set includes constants from facts and rules but not variables.
     #[test]
     fn terms_collects_facts_and_rule_constants() {
         let vial = Vial::new("v", "test")

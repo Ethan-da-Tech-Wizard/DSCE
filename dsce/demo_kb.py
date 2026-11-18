@@ -1,3 +1,7 @@
+# Program: DSCE - demo_kb.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Builds the small demonstration knowledge base (philosophers, biology, geometry, measurements) used by the CLI and tests.
 """A small demonstration knowledge base.
 
 Four vials spanning two unrelated domains, chosen so that queries visibly
@@ -31,6 +35,7 @@ from dsce.vial import Rule, Vial
 
 
 def build_engine() -> Engine:
+    """Create an Engine preloaded with the four demo vials and return it."""
     engine = Engine()
 
     engine.add_vial(Vial(

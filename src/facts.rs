@@ -1,3 +1,7 @@
+// Program: DSCE - facts.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Core vocabulary: Term, Fact, Pattern, Bindings, plus unification, substitution and specificity checks.
 //! Facts, patterns, and unification — the vocabulary of the whole engine.
 //!
 //! EVERYTHING the DSCE knows or asks is expressed as a triple:
@@ -29,12 +33,17 @@ use ordered_float::OrderedFloat;
 /// maps and guarantees deterministic iteration everywhere.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Term {
+    /// A text value (or a `?variable` name).
     Str(String),
+    /// A 64-bit integer.
     Int(i64),
+    /// A totally ordered floating-point number.
     Float(OrderedFloat<f64>),
+    /// A boolean.
     Bool(bool),
 }
 
+// Constructors and variable checks.
 impl Term {
     /// Convenience constructor for string terms.
     pub fn str(s: impl Into<String>) -> Term {
@@ -61,7 +70,9 @@ impl Term {
     }
 }
 
+// Plain text rendering of a term.
 impl fmt::Display for Term {
+    /// Write the term without quotes or type tags.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Term::Str(s) => write!(f, "{s}"),
@@ -73,31 +84,37 @@ impl fmt::Display for Term {
     }
 }
 
+// Conversions so call sites can pass plain Rust values where a Term is needed.
 impl From<&str> for Term {
+    /// Build a string term from a string slice.
     fn from(s: &str) -> Term {
         Term::Str(s.to_string())
     }
 }
 
 impl From<String> for Term {
+    /// Build a string term from an owned string.
     fn from(s: String) -> Term {
         Term::Str(s)
     }
 }
 
 impl From<i64> for Term {
+    /// Build an integer term.
     fn from(i: i64) -> Term {
         Term::Int(i)
     }
 }
 
 impl From<f64> for Term {
+    /// Build a float term.
     fn from(x: f64) -> Term {
         Term::Float(OrderedFloat(x))
     }
 }
 
 impl From<bool> for Term {
+    /// Build a boolean term.
     fn from(b: bool) -> Term {
         Term::Bool(b)
     }
@@ -221,14 +238,17 @@ pub fn is_more_specific(term1: &Term, term2: &Term, facts: &[&Fact]) -> bool {
     false
 }
 
+// Unit tests for unification, substitution and specificity.
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// Shorthand for a string term.
     fn t(s: &str) -> Term {
         Term::str(s)
     }
 
+    /// A variable in the pattern gets bound to the fact's value.
     #[test]
     fn unify_binds_variables() {
         let b = unify(
@@ -240,6 +260,7 @@ mod tests {
         assert_eq!(b.get("?x"), Some(&t("socrates")));
     }
 
+    /// A variable already bound to another value makes unification fail.
     #[test]
     fn unify_respects_existing_bindings() {
         let mut existing = Bindings::new();
@@ -252,6 +273,7 @@ mod tests {
         .is_none());
     }
 
+    /// A differing constant makes unification fail.
     #[test]
     fn unify_rejects_constant_mismatch() {
         assert!(unify(
@@ -262,6 +284,7 @@ mod tests {
         .is_none());
     }
 
+    /// Substituting with a missing binding returns an error.
     #[test]
     fn substitute_errors_on_unbound() {
         let mut b = Bindings::new();
@@ -269,6 +292,7 @@ mod tests {
         assert!(substitute(&(t("?x"), t("area"), t("?a")), &b).is_err());
     }
 
+    /// Longer terms containing a shorter one are more specific; equal terms and non-strings are not.
     #[test]
     fn lexical_specificity() {
         assert!(is_more_specific(&t("tower of pie in ajo arizona"), &t("tower of pie"), &[]));
@@ -277,6 +301,7 @@ mod tests {
         assert!(!is_more_specific(&t("tower of pie"), &Term::Int(123), &[]));
     }
 
+    /// is_a chains in working memory make a subtype more specific than its supertype.
     #[test]
     fn taxonomic_specificity() {
         let f1 = (t("socrates"), t("is_a"), t("human"));

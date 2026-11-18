@@ -1,3 +1,7 @@
+// Program: DSCE - harvester.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: The Semantic Harvester: turns a natural-language software request into a query goal plus vocabulary triples, offline by keywords or from an LLM's JSON reply.
 //! The Semantic Harvester — the AI/DE bridge between natural language and
 //! the Datalog engine.
 //!
@@ -109,6 +113,7 @@ const STOPWORDS: &[&str] = &[
     "app", "application", "program", "software", "simple",
 ];
 
+/// True if any token equals one of the keywords.
 fn matches_any(tokens: &[String], keywords: &[&str]) -> bool {
     tokens.iter().any(|t| keywords.contains(&t.as_str()))
 }
@@ -459,14 +464,17 @@ pub fn harvest_offline(request: &str) -> Harvest {
     }
 }
 
+// Unit tests for the offline harvester and the LLM reply parser.
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// Shorthand for a string term.
     fn t(s: &str) -> Term {
         Term::str(s)
     }
 
+    /// The flagship grid-game request yields the expected app name, goal and vocabulary triples.
     #[test]
     fn flagship_request_harvests_full_vocabulary() {
         let h = harvest_offline("Make a multiplayer grid game with a scoring system");
@@ -486,6 +494,7 @@ mod tests {
         }
     }
 
+    /// Harvesting the same request twice gives identical output.
     #[test]
     fn harvest_is_deterministic() {
         let a = harvest_offline("Make a multiplayer grid game with a scoring system");
@@ -494,6 +503,7 @@ mod tests {
         assert_eq!(a.goal, b.goal);
     }
 
+    /// Each named programming language maps to its lang_* target triple.
     #[test]
     fn explicit_languages_are_harvested() {
         let cases = [
@@ -514,6 +524,7 @@ mod tests {
         }
     }
 
+    /// With no language named, Python is the target.
     #[test]
     fn python_is_the_default_target_language() {
         let h = harvest_offline("Make a random number generator");
@@ -522,6 +533,7 @@ mod tests {
             .contains(&(t(&h.app), t("target_language"), t("lang_python"))));
     }
 
+    /// Naming a language removes the Python default.
     #[test]
     fn explicit_language_replaces_the_default() {
         let h = harvest_offline("Make a random number generator in Rust");
@@ -530,6 +542,7 @@ mod tests {
             .contains(&(t(&h.app), t("target_language"), t("lang_python"))));
     }
 
+    /// Framework and tool names map to the matching capability needs.
     #[test]
     fn framework_keywords_map_to_capabilities() {
         let cases = [
@@ -548,6 +561,7 @@ mod tests {
         }
     }
 
+    /// A strict-JSON harvest reply parses into the app, goal and triples.
     #[test]
     fn parse_response_round_trip() {
         let h = parse_response(
@@ -561,6 +575,7 @@ mod tests {
         assert_eq!(h.goal.2, t("?code"));
     }
 
+    /// The rendered prompt contains the request and the strict-JSON instruction.
     #[test]
     fn prompt_embeds_request() {
         let p = prompt_for("build a chess timer");

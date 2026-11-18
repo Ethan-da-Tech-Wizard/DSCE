@@ -1,3 +1,7 @@
+# Program: DSCE - proof.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Defines Derivation records and the Proof tree that explains how each fact was established, with text rendering.
 """Proof construction and rendering — how the DSCE shows its work.
 
 THE KEY DESIGN DECISION in this file: proofs are not built as a separate
@@ -75,6 +79,7 @@ class Proof:
     """
 
     def __init__(self, root: Fact, derivations: dict):
+        """Store the root fact and a reference to the shared derivation dict."""
         self.root = root
         self.derivations = derivations  # Fact -> Derivation, shared working memory
 

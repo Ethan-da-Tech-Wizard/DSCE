@@ -1,3 +1,9 @@
+# Program: DSCE - test_new_features.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Tests for conflict detection, answer specificity notes and the SQLite vial store.
+"""Tests for conflict detection, answer specificity notes and the SQLite vial store."""
+
 import unittest
 import os
 import tempfile
@@ -9,7 +15,9 @@ from dsce.demo_kb import build_engine
 
 
 class TestConflicts(unittest.TestCase):
+    """Tests for functional-predicate conflict detection."""
     def test_functional_predicate_conflict(self):
+        """Two vials giving different values for a functional predicate produce one reported conflict."""
         engine = Engine()
         engine.register_predicate("height", functional=True)
         
@@ -52,13 +60,16 @@ class TestConflicts(unittest.TestCase):
 
 
 class TestSpecificity(unittest.TestCase):
+    """Tests for the more-specific-answer heuristic."""
     def test_lexical_specificity(self):
+        """Longer terms containing a shorter one count as more specific; non-strings and equal terms do not."""
         self.assertTrue(is_more_specific("tower of pie in ajo arizona", "tower of pie"))
         self.assertFalse(is_more_specific("tower of pie", "tower of pie in ajo arizona"))
         self.assertFalse(is_more_specific("tower of pie", "tower of pie"))
         self.assertFalse(is_more_specific("tower of pie", 123))
 
     def test_taxonomic_specificity(self):
+        """is_a chains in working memory make a subtype more specific than its supertype."""
         # Build taxonomic working memory: socrates is a human, human is a mammal
         wm = {
             ("socrates", "is_a", "human"): None,
@@ -71,6 +82,7 @@ class TestSpecificity(unittest.TestCase):
         self.assertFalse(is_more_specific("socrates", "geometry", wm))
 
     def test_specificity_summary_output(self):
+        """The result summary notes when one answer is more specific than another."""
         engine = Engine()
         engine.add_vial(Vial(
             id="survey",
@@ -89,15 +101,19 @@ class TestSpecificity(unittest.TestCase):
 
 
 class TestSqliteVialStore(unittest.TestCase):
+    """Tests for saving and loading vials through the SQLite store."""
     def setUp(self):
+        """Create a temporary database file and store for each test."""
         self.db_fd, self.db_path = tempfile.mkstemp()
         self.store = SqliteVialStore(self.db_path)
         
     def tearDown(self):
+        """Close and delete the temporary database file."""
         os.close(self.db_fd)
         os.unlink(self.db_path)
 
     def test_save_and_load_vial(self):
+        """A saved vial reloads with the same fields, and its compute hook still works."""
         # Get demo geometry vial (contains facts, rules with computes, evidence, neighbors)
         kb = build_engine()
         geometry_vial = kb.vials["geometry"]
@@ -126,6 +142,7 @@ class TestSqliteVialStore(unittest.TestCase):
         self.assertEqual(rect_area_rule.compute(bindings), {"?a": 200})
 
     def test_database_backed_engine_ask(self):
+        """A store-backed engine loads only the vials a query needs."""
         # Save all demo vials to database
         kb = build_engine()
         for rule in kb.vials["geometry"].rules:

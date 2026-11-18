@@ -1,3 +1,7 @@
+// Program: DSCE - json_vials.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Loads vials from normalized JSON files (single files or whole directories) and builds an engine with the synthesis knowledge base's predicate metadata.
 //! Normalized JSON vials — knowledge as data files.
 //!
 //! The synthesis knowledge base (`vials_synthesis/`) stores vials as plain
@@ -35,10 +39,12 @@ use crate::engine::Engine;
 use crate::facts::{Fact, Pattern};
 use crate::vial::{Rule, Vial};
 
+/// Serde default for the `confidence` field: fully trusted.
 fn default_confidence() -> f64 {
     1.0
 }
 
+/// On-disk JSON shape of a rule; `premises`/`conclusion` are raw JSON triples checked later.
 #[derive(Deserialize)]
 struct RuleDoc {
     name: String,
@@ -51,6 +57,7 @@ struct RuleDoc {
     confidence: f64,
 }
 
+/// On-disk JSON shape of a vial; omitted fields fall back to empty values or full confidence.
 #[derive(Deserialize)]
 struct VialDoc {
     id: String,
@@ -68,6 +75,7 @@ struct VialDoc {
     confidence: f64,
 }
 
+/// Decode a JSON triple, prefixing any error with where it was found.
 fn triple(value: &Value, context: &str) -> Result<Pattern, String> {
     triple_from_json(value).map_err(|e| format!("{context}: {e}"))
 }
@@ -168,6 +176,7 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     Ok(engine)
 }
 
+/// Recursively gather every `.json` file path under `dir` into `out`.
 fn collect_json_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
     let entries = fs::read_dir(dir).map_err(|e| format!("cannot read directory {}: {e}", dir.display()))?;
     for entry in entries {
@@ -182,11 +191,13 @@ fn collect_json_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> 
     Ok(())
 }
 
+// Unit tests for JSON vial parsing.
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::facts::Term;
 
+    /// Facts, rules, the compute hook and the default confidence all parse from JSON.
     #[test]
     fn parses_facts_rules_and_compute() {
         let vial = vial_from_json(
@@ -209,6 +220,7 @@ mod tests {
         assert_eq!(vial.confidence, 1.0);
     }
 
+    /// An invalid compute expression makes loading fail with an error.
     #[test]
     fn bad_compute_fails_loudly() {
         let err = vial_from_json(

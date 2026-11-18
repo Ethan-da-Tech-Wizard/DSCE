@@ -1,3 +1,7 @@
+// Program: DSCE - synthesis_tests.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Integration tests for the software assembler: the JSON vial knowledge base, the Semantic Harvester and end-to-end program synthesis in many languages.
 //! Integration tests for the generic software assembler: JSON vials,
 //! the Semantic Harvester, and end-to-end program synthesis.
 
@@ -6,20 +10,24 @@ use dsce::facts::Term;
 use dsce::harvester::harvest_offline;
 use dsce::json_vials::{engine_from_dir, load_vials_dir};
 
+/// Shorthand for a string term.
 fn t(s: &str) -> Term {
     Term::str(s)
 }
 
+/// Absolute path of the JSON vial directory shipped with the crate.
 fn vials_dir() -> String {
     format!("{}/vials_synthesis", env!("CARGO_MANIFEST_DIR"))
 }
 
+/// Harvest `request` offline, flood the synthesis knowledge base and return the result.
 fn synthesize(request: &str) -> QueryResult {
     let mut engine = engine_from_dir(vials_dir()).expect("synthesis KB loads");
     let harvest = harvest_offline(request);
     engine.ask_with_facts(&harvest.goal, &harvest.triples)
 }
 
+/// Every expected vial file loads from the synthesis directory.
 #[test]
 fn synthesis_kb_loads_completely() {
     let vials = load_vials_dir(vials_dir()).unwrap();
@@ -85,6 +93,7 @@ fn synthesis_kb_loads_completely() {
     );
 }
 
+/// Library vials never mention each other; only pattern vials bind them.
 #[test]
 fn library_vials_are_decoupled() {
     // The graphics, database, and networking vials must not mention each
@@ -115,6 +124,7 @@ fn library_vials_are_decoupled() {
     }
 }
 
+/// The flagship grid-game request assembles a full program with a traceable proof.
 #[test]
 fn flagship_request_assembles_full_program() {
     let result = synthesize("Make a multiplayer grid game with a scoring system");
@@ -158,6 +168,7 @@ fn flagship_request_assembles_full_program() {
     assert!(proof.contains("pygame 2.x documentation"));
 }
 
+/// The same request gives an identical summary twice.
 #[test]
 fn synthesis_is_deterministic() {
     let a = synthesize("Make a multiplayer grid game with a scoring system").summary();
@@ -165,6 +176,7 @@ fn synthesis_is_deterministic() {
     assert_eq!(a, b);
 }
 
+/// A grid-only request leaves unrelated vials dormant and yields no full program.
 #[test]
 fn partial_request_stays_sparse() {
     // A grid-only request must not wake the database, networking, or FSM
@@ -188,6 +200,7 @@ fn partial_request_stays_sparse() {
         .contains_key(&(t("draw_grid_tiles"), t("uses"), t("pygame"))));
 }
 
+/// Harvested vocabulary steers generic patterns for a request no app-specific vial covers.
 #[test]
 fn vocabulary_triples_steer_generic_patterns() {
     // The same KB serves a completely different request zero-shot: a
@@ -209,6 +222,7 @@ fn vocabulary_triples_steer_generic_patterns() {
         .any(|d| d.vial_id == "grid_layout" && d.rule_name.is_some()));
 }
 
+/// A random number generator request assembles the Python program.
 #[test]
 fn random_number_generator_synthesis() {
     let result = synthesize("Make a random number generator");
@@ -222,6 +236,7 @@ fn random_number_generator_synthesis() {
     assert!(code.contains("print(random.randint(1, 100))"));
 }
 
+/// A C++ GUI request assembles the C++ GUI program.
 #[test]
 fn cpp_gui_app_synthesis() {
     let result = synthesize("Make a random number generator in C++ and show me the GUI");
@@ -268,6 +283,7 @@ fn code_with_banner(request: &str, marker: &str) -> String {
     hits[0].clone()
 }
 
+/// A Rust random number generator request assembles a Rust program.
 #[test]
 fn rust_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in Rust", "(Rust)");
@@ -276,6 +292,7 @@ fn rust_random_cli_synthesis() {
     assert!(code.contains("println!"));
 }
 
+/// A C random number generator request assembles a C program.
 #[test]
 fn c_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in C", "(C)");
@@ -284,6 +301,7 @@ fn c_random_cli_synthesis() {
     assert!(code.contains("rand() % 100 + 1"));
 }
 
+/// A C++ random number generator request assembles a C++ program.
 #[test]
 fn cpp_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in C++", "polyglot assembler (C++)");
@@ -292,6 +310,7 @@ fn cpp_random_cli_synthesis() {
     assert!(code.contains("std::uniform_int_distribution<> dist(1, 100);"));
 }
 
+/// A C# random number generator request assembles a C# program.
 #[test]
 fn csharp_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in C#", "(C#)");
@@ -300,6 +319,7 @@ fn csharp_random_cli_synthesis() {
     assert!(code.contains("Console.WriteLine(random.Next(1, 101));"));
 }
 
+/// A Go random number generator request assembles a Go program.
 #[test]
 fn go_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in Go", "(Go)");
@@ -308,6 +328,7 @@ fn go_random_cli_synthesis() {
     assert!(code.contains("fmt.Println(rand.Intn(100) + 1)"));
 }
 
+/// A SQL random number generator request assembles a SQL script.
 #[test]
 fn sql_random_synthesis() {
     let codes = assembled_codes("Write a random number generator in SQL");
@@ -322,6 +343,7 @@ fn sql_random_synthesis() {
     assert!(sql_found, "SQL random program was not assembled by the engine");
 }
 
+/// An assembly random number generator request assembles an assembly program.
 #[test]
 fn assembly_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in assembly", "x86-64 NASM");
@@ -330,12 +352,14 @@ fn assembly_random_cli_synthesis() {
     assert!(code.contains("syscall"));
 }
 
+/// A JavaScript random number generator request assembles a JavaScript program.
 #[test]
 fn javascript_random_cli_synthesis() {
     let code = code_with_banner("Make a random number generator in JavaScript", "Node.js");
     assert!(code.contains("console.log(Math.floor(Math.random() * 100) + 1);"));
 }
 
+/// Naming a language other than Python suppresses the Python program.
 #[test]
 fn explicit_language_suppresses_python_answer() {
     // An explicit Rust request must not also assemble the Python CLI
@@ -348,6 +372,7 @@ fn explicit_language_suppresses_python_answer() {
     }
 }
 
+/// With no language named, only the Python program is assembled.
 #[test]
 fn python_stays_the_default_language() {
     // No language named: the classic Python path still answers, alone.
@@ -358,6 +383,7 @@ fn python_stays_the_default_language() {
     assert!(code.contains("import random"));
 }
 
+/// A container request assembles a Dockerfile.
 #[test]
 fn dockerfile_synthesis() {
     let code = code_with_banner("Containerize the service with Docker", "(Dockerfile)");
@@ -365,6 +391,7 @@ fn dockerfile_synthesis() {
     assert!(code.contains("CMD [\"python\", \"main.py\"]"));
 }
 
+/// An orchestration request assembles a Kubernetes manifest.
 #[test]
 fn kubernetes_manifest_synthesis() {
     let code = code_with_banner("Deploy the service with Kubernetes", "(Kubernetes)");
@@ -373,6 +400,7 @@ fn kubernetes_manifest_synthesis() {
     assert!(code.contains("containerPort: 8080"));
 }
 
+/// A PyTorch request assembles a script and derives its install step and dependencies.
 #[test]
 fn pytorch_framework_synthesis_with_install_step() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -397,6 +425,7 @@ fn pytorch_framework_synthesis_with_install_step() {
         .contains_key(&(app, t("requires_dependency"), t("python_runtime"))));
 }
 
+/// Electron's dependencies resolve transitively through Node.js.
 #[test]
 fn electron_dependencies_resolve_transitively() {
     // Electron depends on Node.js and Chromium; Node.js depends on V8 and
@@ -427,6 +456,7 @@ fn electron_dependencies_resolve_transitively() {
     );
 }
 
+/// A FAISS request assembles a vector search program.
 #[test]
 fn faiss_vector_search_synthesis() {
     let code = code_with_banner("Build a FAISS vector search program", "(FAISS)");
@@ -434,6 +464,7 @@ fn faiss_vector_search_synthesis() {
     assert!(code.contains("index.search"));
 }
 
+/// A C++ dictionary request assembles a dictionary program.
 #[test]
 fn cpp_dictionary_synthesis() {
     let result = synthesize("Make a dictionary with a search function in C++");
@@ -453,6 +484,7 @@ fn cpp_dictionary_synthesis() {
     assert!(dict_found, "C++ GUI dictionary program was not assembled by the engine");
 }
 
+/// A Python GUI request assembles a Python GUI program.
 #[test]
 fn polyglot_gui_app_synthesis_python() {
     let code = code_with_banner("Make a GUI in Python", "Python");
@@ -460,6 +492,7 @@ fn polyglot_gui_app_synthesis_python() {
     assert!(code.contains("root.mainloop()"));
 }
 
+/// A C++ GUI request assembles a C++ GUI program.
 #[test]
 fn polyglot_gui_app_synthesis_cpp() {
     let code = code_with_banner("Make a GUI in C++", "polyglot assembler (C++)");
@@ -467,6 +500,7 @@ fn polyglot_gui_app_synthesis_cpp() {
     assert!(code.contains("QApplication app"));
 }
 
+/// A Rust web server request assembles a Rust program.
 #[test]
 fn polyglot_web_app_synthesis_rust() {
     let code = code_with_banner("Make a web server in Rust", "Rust");
@@ -474,6 +508,7 @@ fn polyglot_web_app_synthesis_rust() {
     assert!(code.contains("TcpListener::bind"));
 }
 
+/// A Go web server request assembles a Go program.
 #[test]
 fn polyglot_web_app_synthesis_go() {
     let code = code_with_banner("Make a web server in Go", "Go");
@@ -481,6 +516,7 @@ fn polyglot_web_app_synthesis_go() {
     assert!(code.contains("ListenAndServe"));
 }
 
+/// A Python database app request assembles a Python program.
 #[test]
 fn polyglot_db_app_synthesis_python() {
     let code = code_with_banner("Make a database app in Python", "Python");
@@ -488,6 +524,7 @@ fn polyglot_db_app_synthesis_python() {
     assert!(code.contains("sqlite3.connect"));
 }
 
+/// A C++ database app request assembles a C++ program.
 #[test]
 fn polyglot_db_app_synthesis_cpp() {
     let code = code_with_banner("Make a database app in C++", "C++");
@@ -495,6 +532,7 @@ fn polyglot_db_app_synthesis_cpp() {
     assert!(code.contains("sqlite3_open"));
 }
 
+/// A SQL database app request assembles a SQL script.
 #[test]
 fn polyglot_db_app_synthesis_sql() {
     let code = code_with_banner("Make a database app in SQL", "SQL");
@@ -502,6 +540,7 @@ fn polyglot_db_app_synthesis_sql() {
     assert!(code.contains("INSERT INTO users"));
 }
 
+/// A FastAPI request assembles a FastAPI server program.
 #[test]
 fn fastapi_framework_synthesis() {
     let code = code_with_banner("Make a fastapi web server", "FastAPI");
@@ -509,6 +548,7 @@ fn fastapi_framework_synthesis() {
     assert!(code.contains("FastAPI()"));
 }
 
+/// An Express request assembles an Express server program.
 #[test]
 fn express_framework_synthesis() {
     let code = code_with_banner("Make an express web server", "Express");
@@ -516,6 +556,7 @@ fn express_framework_synthesis() {
     assert!(code.contains("app.listen"));
 }
 
+/// A Python calculator request assembles a Python program.
 #[test]
 fn polyglot_calc_app_synthesis_python() {
     let code = code_with_banner("Make a calculator in Python", "Python");
@@ -523,6 +564,7 @@ fn polyglot_calc_app_synthesis_python() {
     assert!(code.contains("Calculator Demo:"));
 }
 
+/// A Go calculator request assembles a Go program.
 #[test]
 fn polyglot_calc_app_synthesis_go() {
     let code = code_with_banner("Make a calculator in Go", "Go");
@@ -530,6 +572,7 @@ fn polyglot_calc_app_synthesis_go() {
     assert!(code.contains("func add(a, b float64)"));
 }
 
+/// An assembly calculator request assembles an assembly program.
 #[test]
 fn polyglot_calc_app_synthesis_assembly() {
     let code = code_with_banner("Make a calculator in assembly", "NASM");
@@ -537,6 +580,7 @@ fn polyglot_calc_app_synthesis_assembly() {
     assert!(code.contains("add eax, 5"));
 }
 
+/// A Python game request assembles a Python program.
 #[test]
 fn polyglot_game_app_synthesis_python() {
     let code = code_with_banner("Make a game in Python", "Python");
@@ -544,6 +588,7 @@ fn polyglot_game_app_synthesis_python() {
     assert!(code.contains("canvas.create_oval"));
 }
 
+/// A Go game request assembles a Go program.
 #[test]
 fn polyglot_game_app_synthesis_go() {
     let code = code_with_banner("Make a game in Go", "Go");
@@ -552,6 +597,7 @@ fn polyglot_game_app_synthesis_go() {
     assert!(code.contains("lionPos"));
 }
 
+/// An assembly game request assembles an assembly program.
 #[test]
 fn polyglot_game_app_synthesis_assembly() {
     let code = code_with_banner("Make a game in assembly", "NASM");
@@ -559,6 +605,7 @@ fn polyglot_game_app_synthesis_assembly() {
     assert!(code.contains("mov eax, 42"));
 }
 
+/// A multi-language Go request assembles a Go backend with JavaScript frontend logic.
 #[test]
 fn polyglot_multilang_tool_synthesis_go_js() {
     let code = code_with_banner("Make a multi-language tool in Go", "Go");
@@ -570,6 +617,7 @@ fn polyglot_multilang_tool_synthesis_go_js() {
     assert!(code.contains("console.log"));
 }
 
+/// Data-system requirements yield storage and isolation recommendations and matching code.
 #[test]
 fn ddia_architectural_inference_and_code_synthesis() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -624,6 +672,7 @@ fn ddia_architectural_inference_and_code_synthesis() {
     assert!(hash_found, "Hash partitioning code with md5 routing should be synthesized");
 }
 
+/// A complete-GUI need with Python target assembles a Tkinter program.
 #[test]
 fn polyglot_ui_synthesis_python() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -646,6 +695,7 @@ fn polyglot_ui_synthesis_python() {
     assert!(code.contains("mainloop"));
 }
 
+/// A complete-GUI need with assembly target assembles an assembly program.
 #[test]
 fn polyglot_ui_synthesis_assembly() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -667,6 +717,7 @@ fn polyglot_ui_synthesis_assembly() {
     assert!(code.contains("RETRO ASSEMBLY INTERFACE"));
 }
 
+/// A complete-GUI need with SQL target assembles a SQL script.
 #[test]
 fn polyglot_ui_synthesis_sql() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -688,6 +739,7 @@ fn polyglot_ui_synthesis_sql() {
     assert!(code.contains("UNION ALL"));
 }
 
+/// Data-structure and pattern needs with Python target assemble the matching Python code.
 #[test]
 fn polyglot_academic_synthesis_python() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -714,6 +766,7 @@ fn polyglot_academic_synthesis_python() {
     assert!(code.contains("class SortingStrategy:"), "Strategy pattern should be synthesized");
 }
 
+/// Data-structure and pattern needs with Go target assemble the matching Go code.
 #[test]
 fn polyglot_academic_synthesis_go() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -740,6 +793,7 @@ fn polyglot_academic_synthesis_go() {
     assert!(code.contains("type SortingStrategy interface"), "Go Strategy interface should be synthesized");
 }
 
+/// Data-structure and pattern needs with Rust target assemble the matching Rust code.
 #[test]
 fn polyglot_academic_synthesis_rust() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -766,6 +820,7 @@ fn polyglot_academic_synthesis_rust() {
     assert!(code.contains("trait SortingStrategy"), "Rust SortingStrategy trait should be synthesized");
 }
 
+/// A multi-library data need assembles Python code using pandas, NumPy, scikit-learn and requests.
 #[test]
 fn polyglot_multilib_synthesis_python() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -794,6 +849,7 @@ fn polyglot_multilib_synthesis_python() {
     assert!(code.contains("np.linalg.eigvals"), "NumPy eigenvalue computation should be synthesized");
 }
 
+/// A hybrid app need assembles Python code with both calculator and game parts.
 #[test]
 fn polyglot_hybrid_synthesis_python() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -817,6 +873,7 @@ fn polyglot_hybrid_synthesis_python() {
     assert!(code.contains("tk.Canvas("), "Game code should be synthesized");
 }
 
+/// A set of game-system needs assembles a modular Python game.
 #[test]
 fn polyglot_modular_game_synthesis() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -847,6 +904,7 @@ fn polyglot_modular_game_synthesis() {
     assert!(code.contains("clock.tick(60)"), "Frame rate limiter should be synthesized");
 }
 
+/// Weapon, movement and tower choices change the assembled game code.
 #[test]
 fn polyglot_dynamic_game_synthesis() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -878,6 +936,7 @@ fn polyglot_dynamic_game_synthesis() {
     assert!(code.contains("pygame.draw.rect(screen, (0, 180, 255),"), "Tesla coil draw should be synthesized");
 }
 
+/// Requests for different Python GUI frameworks assemble the matching framework code.
 #[test]
 fn polyglot_python_gui_frameworks_synthesis() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -931,6 +990,7 @@ fn polyglot_python_gui_frameworks_synthesis() {
     assert!(code3.contains("from textual.app import App"), "Textual imports should be present");
 }
 
+/// A high-tier game with many systems assembles code initializing each system.
 #[test]
 fn polyglot_neon_rift_synthesis() {
     let mut engine = engine_from_dir(vials_dir()).unwrap();
@@ -965,6 +1025,7 @@ fn polyglot_neon_rift_synthesis() {
     assert!(code.contains("boss_telegraph_timer ="), "Boss AI ticks should be updated");
 }
 
+/// A plain-language form request maps to a Tkinter GUI via vocabulary mapping.
 #[test]
 fn polyglot_declarative_harvesting() {
     let result = synthesize("Make a form in python that displays flashing colors");

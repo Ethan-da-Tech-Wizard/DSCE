@@ -1,3 +1,7 @@
+# Program: DSCE - vial.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Defines Rule (an inference step) and Vial (a knowledge container of facts, rules, neighbors and evidence).
 """Vials: the knowledge containers of the DSCE.
 
 A vial is the unit of knowledge STORAGE, the way a parameter matrix is the

@@ -1,3 +1,7 @@
+# Program: DSCE - db_store.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: SQLite-backed store that saves vials, facts, rules and a term index, and loads vials on demand for the engine.
 """Database-backed storage for DSCE vials.
 
 Allows persistence of vials (facts, rules, neighbors, terms) in SQLite
@@ -15,11 +19,15 @@ from dsce.vial import Rule, Vial
 
 
 class SqliteVialStore:
+    """Persists vials in a SQLite file and serves them back by id or by term."""
+
     def __init__(self, db_path: str):
+        """Remember the database file path and make sure the tables exist."""
         self.db_path = db_path
         self._init_db()
 
     def _init_db(self):
+        """Create the vials, facts, rules and term_index tables (and indexes) if missing."""
         conn = sqlite3.connect(self.db_path)
         try:
             conn.execute("""
@@ -66,6 +74,7 @@ class SqliteVialStore:
             conn.close()
 
     def save_vial(self, vial: Vial):
+        """Write a vial (metadata, facts, rules, term index) replacing any older copy."""
         conn = sqlite3.connect(self.db_path)
         try:
             # Save vial metadata
@@ -116,6 +125,7 @@ class SqliteVialStore:
             conn.close()
 
     def get_vial_ids_for_term(self, term: Term) -> tuple[str, ...]:
+        """Return the ids of all stored vials that mention `term`, sorted by id."""
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -125,6 +135,7 @@ class SqliteVialStore:
             conn.close()
 
     def load_vial(self, vial_id: str) -> Vial:
+        """Rebuild a Vial from its stored rows; raises ValueError if the id is unknown."""
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -152,6 +163,7 @@ class SqliteVialStore:
                 premises = tuple(tuple(self._parse_term(t) for t in p) for p in json.loads(premises_json))
                 conclusion = tuple(self._parse_term(t) for t in json.loads(conclusion_json))
                 
+                # Rebuild the optional compute hook from its stored source text.
                 compute = None
                 if compute_body:
                     try:
@@ -166,6 +178,7 @@ class SqliteVialStore:
                     compute=compute,
                     confidence=rule_confidence
                 )
+                # Keep the source text on the frozen Rule so it can be saved again.
                 if compute_body:
                     object.__setattr__(rule, "_compute_body", compute_body)
                 rules.append(rule)
@@ -183,6 +196,7 @@ class SqliteVialStore:
             conn.close()
 
     def _parse_term(self, val_str: str) -> Term:
+        """Convert a stored text value back to bool, int, float or str (in that order)."""
         if not isinstance(val_str, str):
             return val_str
         if val_str.lower() in ("true", "false"):

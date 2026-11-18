@@ -1,3 +1,7 @@
+// Program: DSCE - engine_tests.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Integration tests for the engine, mirroring the Python test suite: flood inference, determinism, conflicts, specificity and the SQLite store.
 //! Integration tests mirroring the Python prototype's test suite
 //! (tests/test_engine.py and tests/test_new_features.py).
 
@@ -8,12 +12,14 @@ use dsce::engine::Engine;
 use dsce::facts::Term;
 use dsce::vial::{Rule, Vial};
 
+/// Shorthand for a string term.
 fn t(s: &str) -> Term {
     Term::str(s)
 }
 
 // --- flood behavior over the demo KB -----------------------------------
 
+/// Socrates' mortality is proved across vials and the proof cites both rules and the axiom.
 #[test]
 fn multi_vial_inference_chain() {
     let mut engine = build_engine();
@@ -27,6 +33,7 @@ fn multi_vial_inference_chain() {
     assert!(proof.contains("axiom in vial 'philosophers'"));
 }
 
+/// The courtyard area is computed as 360 by the rule's compute hook.
 #[test]
 fn deterministic_computation() {
     let mut engine = build_engine();
@@ -35,6 +42,7 @@ fn deterministic_computation() {
     assert_eq!(result.answers[0].bindings.get("?a"), Some(&Term::Int(360)));
 }
 
+/// The plaza area (625) needs derived facts to feed later rules before computing.
 #[test]
 fn derived_facts_feed_further_rules() {
     // plaza is a square; area requires deriving rectangle-ness, width and
@@ -45,6 +53,7 @@ fn derived_facts_feed_further_rules() {
     assert_eq!(result.answers[0].bindings.get("?a"), Some(&Term::Int(625)));
 }
 
+/// A geometry query leaves the philosophy and biology vials dormant.
 #[test]
 fn sparse_activation() {
     // A geometry query must not wake the philosophy or biology vials.
@@ -54,6 +63,7 @@ fn sparse_activation() {
     assert!(result.dormant.contains(&"biology".to_string()));
 }
 
+/// Two separate engines give identical summaries for the same query.
 #[test]
 fn determinism() {
     let goal = (t("?who"), t("is_a"), t("mammal"));
@@ -62,6 +72,7 @@ fn determinism() {
     assert_eq!(first, second);
 }
 
+/// Rule and vial confidences multiply along the proof chain.
 #[test]
 fn confidence_propagates() {
     let mut engine = build_engine();
@@ -70,6 +81,7 @@ fn confidence_propagates() {
     assert!((result.answers[0].confidence - 0.999 * 0.99).abs() < 1e-6);
 }
 
+/// An unknown subject yields no answers.
 #[test]
 fn no_proof_found() {
     let mut engine = build_engine();
@@ -77,6 +89,7 @@ fn no_proof_found() {
     assert!(result.answers.is_empty());
 }
 
+/// A variable subject enumerates every matching entity.
 #[test]
 fn variable_subject_enumerates() {
     let mut engine = build_engine();
@@ -92,6 +105,7 @@ fn variable_subject_enumerates() {
 
 // --- engine basics -------------------------------------------------------
 
+/// Adding a second vial with the same id is an error.
 #[test]
 fn duplicate_vial_id_rejected() {
     let mut engine = Engine::new();
@@ -99,6 +113,7 @@ fn duplicate_vial_id_rejected() {
     assert!(engine.add_vial(Vial::new("a", "a again")).is_err());
 }
 
+/// A never-ending counting rule is stopped by the tick budget.
 #[test]
 fn tick_budget_halts_flood() {
     let mut engine = Engine::new();
@@ -121,6 +136,7 @@ fn tick_budget_halts_flood() {
 
 // --- functional predicate conflicts --------------------------------------
 
+/// Two vials disagreeing on a functional predicate produce one reported conflict.
 #[test]
 fn functional_predicate_conflict() {
     let mut engine = Engine::new();
@@ -161,6 +177,7 @@ fn functional_predicate_conflict() {
 
 // --- specificity ----------------------------------------------------------
 
+/// The summary notes when one answer is more specific than another.
 #[test]
 fn specificity_summary_output() {
     let mut engine = Engine::new();
@@ -185,6 +202,7 @@ fn specificity_summary_output() {
 
 // --- SQLite store ----------------------------------------------------------
 
+/// A vial saved to SQLite reloads with the same fields and a working compute hook.
 #[test]
 fn save_and_load_vial() {
     let dir = tempfile::tempdir().unwrap();
@@ -211,6 +229,7 @@ fn save_and_load_vial() {
     assert_eq!(extra.get("?a"), Some(&Term::Int(200)));
 }
 
+/// A store-backed engine loads only the vials a query needs.
 #[test]
 fn database_backed_engine_ask() {
     let dir = tempfile::tempdir().unwrap();
@@ -241,6 +260,7 @@ fn database_backed_engine_ask() {
     assert!(engine.vials.contains_key("measurements"));
 }
 
+/// A rule with a native closure hook cannot be saved to the database.
 #[test]
 fn native_compute_cannot_be_saved() {
     let store = SqliteVialStore::open_in_memory().unwrap();
@@ -253,6 +273,7 @@ fn native_compute_cannot_be_saved() {
     assert!(store.save_vial(&vial).is_err());
 }
 
+/// The goal predicate seeds sand only when it is the sole constant.
 #[test]
 fn seeding_skips_predicate_when_other_constants_exist() {
     // (socrates is_mortal ?x): "is_mortal" appears in the biology vial, but

@@ -1,3 +1,7 @@
+// Program: DSCE - compute.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Deterministic, serializable rule compute hooks: a small arithmetic/string expression language (parser and evaluator) plus native closure hooks.
 //! Deterministic, serializable `compute` hooks for rules.
 //!
 //! The Python prototype attached raw lambdas to rules and `eval()`ed their
@@ -47,6 +51,7 @@ pub enum Compute {
     Native(Arc<dyn Fn(&Bindings) -> Bindings + Send + Sync>),
 }
 
+// Constructors and accessors for compute hooks.
 impl Compute {
     /// Parse an expression program, e.g. `"?a = ?w * ?h"`.
     pub fn expr(source: &str) -> Result<Compute, String> {
@@ -79,7 +84,9 @@ impl Compute {
     }
 }
 
+/// Debug output shows the expression source, or a placeholder for closures.
 impl fmt::Debug for Compute {
+    /// Format the hook for debugging.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Compute::Expr(program) => write!(f, "Compute::Expr({:?})", program.source),
@@ -98,7 +105,9 @@ pub struct ExprProgram {
     assignments: Vec<(String, Expr)>,
 }
 
+// Parsing and evaluation of assignment programs.
 impl ExprProgram {
+    /// Parse semicolon-separated `?var = expr` statements; errors describe the first bad statement.
     pub fn parse(source: &str) -> Result<ExprProgram, String> {
         let mut assignments = Vec::new();
         for stmt in source.split(';') {
@@ -127,6 +136,7 @@ impl ExprProgram {
         })
     }
 
+    /// Run each assignment in order and return the new bindings, or `None` if any step fails softly.
     fn eval(&self, bindings: &Bindings) -> Option<Bindings> {
         let mut extra = Bindings::new();
         for (target, expr) in &self.assignments {
@@ -137,6 +147,7 @@ impl ExprProgram {
     }
 }
 
+/// Parsed arithmetic expression tree: literals, variables, negation and binary operations.
 #[derive(Debug, Clone)]
 enum Expr {
     Int(i64),
@@ -147,6 +158,7 @@ enum Expr {
     Bin(Op, Box<Expr>, Box<Expr>),
 }
 
+/// The four binary arithmetic operators.
 #[derive(Debug, Clone, Copy)]
 enum Op {
     Add,
@@ -164,7 +176,9 @@ enum Value {
     Str(String),
 }
 
+// Conversions between evaluator values and engine terms.
 impl Value {
+    /// Convert an evaluated value into a fact term.
     fn into_term(self) -> Term {
         match self {
             Value::Int(i) => Term::Int(i),
@@ -192,7 +206,10 @@ impl Value {
     }
 }
 
+// Expression evaluation.
 impl Expr {
+    /// Evaluate against the rule's bindings plus values assigned earlier in the program.
+    /// Returns `None` for unbound variables, boolean operands, overflow, division by zero or string arithmetic.
     fn eval(&self, bindings: &Bindings, extra: &Bindings) -> Option<Value> {
         match self {
             Expr::Int(i) => Some(Value::Int(*i)),
@@ -249,6 +266,7 @@ impl Expr {
     }
 }
 
+/// Lexical token produced by the expression tokenizer.
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
     Num(String),
@@ -262,12 +280,15 @@ enum Token {
     RParen,
 }
 
+/// Recursive-descent parser state: the token list and the current position.
 struct Parser {
     tokens: Vec<Token>,
     pos: usize,
 }
 
+// Tokenizing and the grammar functions.
 impl Parser {
+    /// Tokenize `src` into a `Parser`; errors on bad characters, bare `?`, or unterminated strings.
     fn new(src: &str) -> Result<Parser, String> {
         let mut tokens = Vec::new();
         let chars: Vec<char> = src.chars().collect();
@@ -358,10 +379,12 @@ impl Parser {
         Ok(Parser { tokens, pos: 0 })
     }
 
+    /// Look at the current token without consuming it.
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.pos)
     }
 
+    /// Consume and return the current token, if any.
     fn advance(&mut self) -> Option<Token> {
         let tok = self.tokens.get(self.pos).cloned();
         if tok.is_some() {
@@ -370,6 +393,7 @@ impl Parser {
         tok
     }
 
+    /// Succeed only when every token has been consumed.
     fn expect_end(&self) -> Result<(), String> {
         if self.pos == self.tokens.len() {
             Ok(())
@@ -439,14 +463,17 @@ impl Parser {
     }
 }
 
+// Unit tests for parsing and evaluation of the expression DSL.
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// Build a `Bindings` map from name/term pairs.
     fn bindings(pairs: &[(&str, Term)]) -> Bindings {
         pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
     }
 
+    /// Integer multiplication of two bound variables stays an integer.
     #[test]
     fn multiplies_bound_ints() {
         let c = Compute::expr("?a = ?w * ?h").unwrap();
@@ -456,6 +483,7 @@ mod tests {
         assert_eq!(extra.get("?a"), Some(&Term::Int(200)));
     }
 
+    /// `?v + 1` increments an integer.
     #[test]
     fn successor_expression() {
         let c = Compute::expr("?next = ?v + 1").unwrap();
@@ -463,6 +491,7 @@ mod tests {
         assert_eq!(extra.get("?next"), Some(&Term::Int(42)));
     }
 
+    /// Multiplication binds tighter than addition and parentheses override it.
     #[test]
     fn precedence_and_parentheses() {
         let c = Compute::expr("?x = 2 + 3 * 4; ?y = (2 + 3) * 4").unwrap();
@@ -471,6 +500,7 @@ mod tests {
         assert_eq!(extra.get("?y"), Some(&Term::Int(20)));
     }
 
+    /// Division yields a float and division by zero fails softly.
     #[test]
     fn division_yields_float_and_guards_zero() {
         let c = Compute::expr("?half = ?v / 2").unwrap();
@@ -481,12 +511,14 @@ mod tests {
         assert!(z.eval(&Bindings::new()).is_none());
     }
 
+    /// A missing variable makes evaluation return `None`.
     #[test]
     fn unbound_variable_fails_softly() {
         let c = Compute::expr("?a = ?missing * 2").unwrap();
         assert!(c.eval(&Bindings::new()).is_none());
     }
 
+    /// A later assignment can use a variable defined by an earlier one.
     #[test]
     fn later_assignment_sees_earlier() {
         let c = Compute::expr("?double = ?v * 2; ?quad = ?double * 2").unwrap();
@@ -494,6 +526,7 @@ mod tests {
         assert_eq!(extra.get("?quad"), Some(&Term::Int(12)));
     }
 
+    /// `+` concatenates two strings.
     #[test]
     fn string_concatenation() {
         let c = Compute::expr("?code = ?code1 + ?code2").unwrap();
@@ -509,6 +542,7 @@ mod tests {
         );
     }
 
+    /// String literals work, and `+` with a string renders the other side as text.
     #[test]
     fn string_literals_and_mixed_concat() {
         let c = Compute::expr("?msg = 'score: ' + ?points + \"\\n\"").unwrap();
@@ -516,12 +550,14 @@ mod tests {
         assert_eq!(extra.get("?msg"), Some(&Term::str("score: 42\n")));
     }
 
+    /// Non-`+` arithmetic on strings fails softly.
     #[test]
     fn arithmetic_on_strings_fails_softly() {
         let c = Compute::expr("?x = ?s * 2").unwrap();
         assert!(c.eval(&bindings(&[("?s", Term::str("abc"))])).is_none());
     }
 
+    /// The original source text is preserved for storage.
     #[test]
     fn source_round_trips() {
         let c = Compute::expr("?a = ?w * ?h").unwrap();

@@ -1,3 +1,7 @@
+# Program: DSCE - seed_geonames.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Downloads the GeoNames cities dataset and stores one regional vial per country (city is_a / located_in facts) in the SQLite store.
 """Ingestion script to seed DSCE SQLite database with GeoNames cities data.
 
 Downloads cities with population > 15,000 from download.geonames.org,
@@ -41,6 +45,7 @@ COUNTRY_MAP = {
 }
 
 def download_and_extract():
+    """Download and unzip the GeoNames archive unless the text file is already present."""
     if not os.path.exists(TXT_FILE):
         print(f"[*] Downloading GeoNames cities15000 database from {GEONAMES_URL}...")
         urllib.request.urlretrieve(GEONAMES_URL, ZIP_FILE)
@@ -52,6 +57,7 @@ def download_and_extract():
         print("[*] GeoNames dataset text file already exists. Skipping download.")
 
 def seed_db():
+    """Parse the cities file, group facts by country vial, save them to SQLite, and clean up."""
     download_and_extract()
     
     store = SqliteVialStore(DB_PATH)
@@ -62,6 +68,7 @@ def seed_db():
     with open(TXT_FILE, "r", encoding="utf-8") as f:
         for line in f:
             parts = line.strip().split("\t")
+            # Skip malformed lines that lack the expected tab-separated columns.
             if len(parts) < 15:
                 continue
             

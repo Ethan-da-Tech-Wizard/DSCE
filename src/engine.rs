@@ -1,3 +1,7 @@
+// Program: DSCE - engine.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: The flood engine: wakes vials with sand grains, fires rules (in parallel) to a fixpoint, detects conflicts and returns answers with derivations.
 //! The DSCE flood engine.
 //!
 //! Reasoning proceeds in discrete ticks:
@@ -57,7 +61,9 @@ pub struct PredicateInfo {
     pub emits_sand: bool,
 }
 
+// Default predicate properties: not functional, and it emits sand.
 impl Default for PredicateInfo {
+    /// Predicates are non-functional and sand-emitting unless registered otherwise.
     fn default() -> PredicateInfo {
         PredicateInfo {
             functional: false,
@@ -86,8 +92,11 @@ pub struct Answer {
 /// (`derivations`) rides along so proofs can be rendered on demand.
 #[derive(Debug, Clone)]
 pub struct QueryResult {
+    /// The pattern that was asked.
     pub goal: Pattern,
+    /// Every working-memory fact that matched the goal, in deterministic order.
     pub answers: Vec<Answer>,
+    /// How many flood rounds ran before settling.
     pub ticks: usize,
     /// Vial ids that received sand, in activation order.
     pub activated: Vec<String>,
@@ -103,6 +112,7 @@ pub struct QueryResult {
     pub derivations: Derivations,
 }
 
+// Rendering helpers for a finished query.
 impl QueryResult {
     /// Render the proof tree for one answer.
     pub fn proof(&self, answer: &Answer) -> String {
@@ -204,13 +214,17 @@ pub struct Engine {
     pub predicates: BTreeMap<String, PredicateInfo>,
 }
 
+// An empty engine is the default.
 impl Default for Engine {
+    /// Same as `Engine::new()`.
     fn default() -> Engine {
         Engine::new()
     }
 }
 
+// Construction, registration, indexing and the flood itself.
 impl Engine {
+    /// Create an empty in-memory engine with a 50-tick flood budget and no store.
     pub fn new() -> Engine {
         Engine {
             max_ticks: 50,
@@ -220,6 +234,7 @@ impl Engine {
         }
     }
 
+    /// Create an engine whose vials are loaded on demand from the given SQLite store.
     pub fn with_store(store: SqliteVialStore) -> Engine {
         Engine {
             store: Some(store),
@@ -239,6 +254,7 @@ impl Engine {
         self.predicates.entry(name.into()).or_default().emits_sand = false;
     }
 
+    /// Whether facts under `pred` should emit sand grains (true unless registered as an annotation).
     fn predicate_emits_sand(&self, pred: &Term) -> bool {
         match pred {
             Term::Str(name) => self.predicates.get(name).map(|p| p.emits_sand).unwrap_or(true),

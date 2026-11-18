@@ -1,7 +1,14 @@
+# Program: DSCE - build_dictionary_tsv.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Exports the english_dictionary vial's definition facts to a two-column word/definition TSV file.
+"""Convert the English dictionary vial JSON into a tab-separated word/definition file."""
+
 import json
 import os
 
 def export_to_tsv():
+    """Read the dictionary vial JSON and write one word<TAB>definition line per definition fact."""
     json_path = "vials_synthesis/english_dictionary.json"
     tsv_path = "scratch/dictionary.tsv"
     

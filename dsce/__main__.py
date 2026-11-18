@@ -1,3 +1,7 @@
+# Program: DSCE - __main__.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Command-line entry point (python -m dsce) that runs the demo queries, a single triple goal, or a goal against a SQLite vial database.
 """Run the DSCE demo:  python -m dsce  [subject predicate object]
 
 With no arguments, runs a showcase of queries against the demo knowledge
@@ -39,6 +43,11 @@ def parse_term(token: str):
 
 
 def main(argv: list) -> int:
+    """Parse command-line arguments, run the requested goal(s), print results.
+
+    Returns a process exit code: 0 on success, 2 on a usage error.
+    """
+    # Optional "--db <path>" prefix switches the engine to a SQLite store.
     db_path = None
     if argv and argv[0] == "--db":
         if len(argv) < 2:
@@ -53,6 +62,7 @@ def main(argv: list) -> int:
     else:
         engine = build_engine()
 
+    # Choose the goals: one user-supplied triple, or the built-in showcase.
     if len(argv) == 3:
         goals = [tuple(parse_term(t) for t in argv)]
     elif not argv:
@@ -72,6 +82,7 @@ def main(argv: list) -> int:
         print("  python -m dsce --db <db_path> [subject predicate object]")
         return 2
 
+    # Run each goal and print its summary, separated by a divider line.
     for i, goal in enumerate(goals):
         if i:
             print("\n" + "=" * 72 + "\n")

@@ -1,3 +1,7 @@
+// Program: DSCE - demo_kb.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Builds the small demonstration knowledge base (philosophers, biology, geometry, measurements) as vials or a ready engine.
 //! A small demonstration knowledge base.
 //!
 //! Four vials spanning two unrelated domains, chosen so that queries
@@ -36,6 +40,7 @@ use crate::engine::Engine;
 use crate::facts::Term;
 use crate::vial::{Rule, Vial};
 
+/// Shorthand for a string term.
 fn t(s: &str) -> Term {
     Term::str(s)
 }

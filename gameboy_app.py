@@ -1,3 +1,7 @@
+# Program: DSCE - gameboy_app.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Tkinter desktop app combining a small paddle-and-ball arcade game with a limited-range calculator in one window.
 # assembled by the DSCE polyglot assembler (Python)
 import tkinter as tk
 import tkinter.messagebox as messagebox
@@ -33,12 +37,14 @@ ball_y_speed = BALL_SPEED
 paddle_speed = 20
 
 def move_left(event):
+    """Key handler: slide the paddle left, clamping it to the canvas edge."""
     canvas.move(paddle, -paddle_speed, 0)
     pos = canvas.coords(paddle)
     if pos[0] < 0:
         canvas.coords(paddle, 0, 230, 80, 240)
 
 def move_right(event):
+    """Key handler: slide the paddle right, clamping it to the canvas edge."""
     canvas.move(paddle, paddle_speed, 0)
     pos = canvas.coords(paddle)
     if pos[2] > 400:
@@ -48,16 +54,19 @@ root.bind('<Left>', move_left)
 root.bind('<Right>', move_right)
 
 def game_loop():
+    """Advance the ball one frame, handle bounces, scoring and reset, then reschedule itself."""
     global ball_x_speed, ball_y_speed, score
     canvas.move(ball, ball_x_speed, ball_y_speed)
     ball_pos = canvas.coords(ball)
     paddle_pos = canvas.coords(paddle)
 
+    # Bounce off the left/right walls and the top wall.
     if ball_pos[0] <= 0 or ball_pos[2] >= 400:
         ball_x_speed = -ball_x_speed
     if ball_pos[1] <= 0:
         ball_y_speed = -ball_y_speed
 
+    # Ball reaches the paddle row inside its width (with 10px slack): bounce up and score.
     if (ball_pos[3] >= paddle_pos[1] and
         ball_pos[0] >= paddle_pos[0] - 10 and
         ball_pos[2] <= paddle_pos[2] + 10):
@@ -65,13 +74,14 @@ def game_loop():
         score += 1
         score_label.config(text=f'Score: {score}')
 
+    # Ball fell past the bottom: put it back at the start and reset the score.
     if ball_pos[3] >= 250:
         canvas.coords(ball, 190, 40, 210, 60)
         ball_y_speed = -abs(ball_y_speed)
         score = 0
         score_label.config(text='Game Over! Score Reset to 0')
 
-    root.after(30, game_loop)
+    root.after(30, game_loop)  # run again in 30 ms (about 33 frames per second)
 
 # ==========================================
 # PART 2: INTERACTIVE CALCULATOR
@@ -83,6 +93,7 @@ display = tk.Entry(calc_frame, font=('Arial', 16), justify='right', bd=5, bg='#1
 display.pack(fill='x', padx=10, pady=5)
 
 def press_key(key):
+    """Handle a calculator button: '=' evaluates the display, 'C' clears it, anything else is appended."""
     if key == '=':
         try:
             val = eval(display.get())
@@ -100,6 +111,7 @@ def press_key(key):
     else:
         display.insert(tk.END, key)
 
+# Calculator keypad layout, one inner list per row of buttons.
 buttons_layout = [
     ['7', '8', '9', '/'],
     ['4', '5', '6', '*'],
@@ -110,6 +122,7 @@ buttons_layout = [
 grid_frame = tk.Frame(calc_frame, bg='#2c2c2c')
 grid_frame.pack()
 
+# Create one button per key; the default argument v=val freezes each key for its callback.
 for r_idx, row in enumerate(buttons_layout):
     for c_idx, val in enumerate(row):
         btn = tk.Button(grid_frame, text=val, font=('Arial', 12, 'bold'), width=5, height=2,
@@ -117,5 +130,5 @@ for r_idx, row in enumerate(buttons_layout):
                         command=lambda v=val: press_key(v))
         btn.grid(row=r_idx, column=c_idx, padx=5, pady=5)
 
-game_loop()
-root.mainloop()
+game_loop()  # start the animation
+root.mainloop()  # hand control to the Tk event loop

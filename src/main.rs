@@ -1,3 +1,7 @@
+// Program: DSCE - main.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Command-line interface: runs the demo, queries a SQLite or JSON-vial knowledge base for a triple goal, seeds a database, or synthesizes software from a request.
 //! DSCE command-line interface.
 //!
 //! ```text
@@ -50,6 +54,7 @@ fn parse_term(token: &str) -> Term {
     Term::str(token)
 }
 
+/// Print the command-line help to stderr and return exit code 2.
 fn usage() -> ExitCode {
     eprintln!("Run the DSCE demo, query a knowledge base, or assemble software:");
     eprintln!("  dsce  [subject predicate object]");
@@ -121,6 +126,7 @@ fn synthesize(request: &str, vials_dir: &str) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// Parse flags, build the requested engine (demo, SQLite or JSON vials), then seed, synthesize or answer goals.
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
@@ -130,6 +136,7 @@ fn main() -> ExitCode {
     let mut seed = false;
     let mut positional: Vec<String> = Vec::new();
 
+    // Hand-rolled flag parser: `--db`, `--vials` and `--synthesize` take a value; everything else is positional.
     let mut i = 0;
     while i < args.len() {
         let take_value = |i: usize, flag: &str| -> Option<String> {
@@ -177,6 +184,7 @@ fn main() -> ExitCode {
         }
     }
 
+    // --seed: write the demo vials into the database and exit.
     if seed {
         let Some(path) = &db_path else {
             eprintln!("Error: --seed requires --db <db_path>.");
@@ -199,11 +207,13 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
+    // --synthesize: run the Semantic Harvester flow against a vial directory.
     if let Some(request) = synth_request {
         let dir = vials_dir.as_deref().unwrap_or("vials_synthesis");
         return synthesize(&request, dir);
     }
 
+    // Choose the knowledge source: SQLite store, JSON vial directory, or the built-in demo.
     let mut engine = if let Some(path) = &db_path {
         match SqliteVialStore::open(path) {
             Ok(store) => {
@@ -231,6 +241,7 @@ fn main() -> ExitCode {
         build_engine()
     };
 
+    // Goals: one triple from the command line, or the demo showcase when none is given.
     let goals: Vec<Pattern> = match positional.len() {
         3 => vec![(
             parse_term(&positional[0]),
@@ -253,6 +264,7 @@ fn main() -> ExitCode {
         _ => return usage(),
     };
 
+    // Ask each goal in turn and print its summary, with a divider between results.
     for (i, goal) in goals.iter().enumerate() {
         if i > 0 {
             println!("\n{}\n", "=".repeat(72));

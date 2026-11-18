@@ -1,3 +1,7 @@
+# Program: DSCE - sand.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Defines Grain, the immutable activation particle that carries one term and its provenance through the flood.
 """Sand: the activation particles of the DSCE.
 
 Sand is NOT data — it is activation, the thing that decides which knowledge
@@ -42,4 +46,5 @@ class Grain:
     tick: int    # flood round on which this grain was created (0 = seeding)
 
     def __str__(self) -> str:
+        """Return a short readable description of the grain for debugging."""
         return f"grain({self.term!r} from {self.origin} @ tick {self.tick})"

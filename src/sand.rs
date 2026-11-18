@@ -1,3 +1,7 @@
+// Program: DSCE - sand.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Defines Grain, the immutable activation particle carrying one term plus its origin and tick.
 //! Sand: the activation particles of the DSCE.
 //!
 //! Sand is NOT data — it is activation, the thing that decides which
@@ -41,7 +45,9 @@ pub struct Grain {
     pub tick: usize,
 }
 
+// Construction.
 impl Grain {
+    /// Create a grain carrying `term`, emitted by `origin` on flood round `tick`.
     pub fn new(term: Term, origin: impl Into<String>, tick: usize) -> Grain {
         Grain {
             term,
@@ -51,7 +57,9 @@ impl Grain {
     }
 }
 
+// Short debug-style description of a grain.
 impl fmt::Display for Grain {
+    /// Write `grain(term from origin @ tick N)`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "grain({:?} from {} @ tick {})", self.term, self.origin, self.tick)
     }

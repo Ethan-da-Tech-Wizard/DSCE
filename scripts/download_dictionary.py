@@ -1,3 +1,7 @@
+# Program: DSCE - download_dictionary.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Downloads a public English dictionary JSON and compiles it into the english_dictionary vial file.
 """Download and Compile English Dictionary for DSCE.
 
 Downloads a public English dictionary JSON file (~2MB, containing 80,000+ definitions),
@@ -11,6 +15,7 @@ import urllib.request
 
 
 def download_and_compile():
+    """Fetch the dictionary, turn each word into a definition fact, and write the vial JSON."""
     url = "https://raw.githubusercontent.com/adambom/dictionary/master/dictionary.json"
     dest_vial = os.path.join("vials_synthesis", "english_dictionary.json")
     

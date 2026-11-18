@@ -1,3 +1,7 @@
+# Program: DSCE - __init__.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: Package entry point that re-exports the public DSCE classes (engine, vials, rules, sand, proofs and the SQLite store) and the version.
 """DSCE — Deterministic Semantic Computation Engine.
 
 Knowledge lives in explicit containers ("vials"). Reasoning is performed by

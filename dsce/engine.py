@@ -1,3 +1,7 @@
+# Program: DSCE - engine.py
+# Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+# Last Modified: 2026-11-18
+# Purpose: The flood engine: activates vials via sand grains, fires rules to a fixpoint, and returns answers with proof trees.
 """The DSCE flood engine.
 
 Reasoning proceeds in discrete ticks:
@@ -177,9 +181,11 @@ class Engine:
         self.predicates: dict = {}  # predicate name -> properties
 
     def register_predicate(self, name: str, functional: bool = False) -> None:
+        """Declare a predicate; a functional one may have only one object per subject."""
         self.predicates[name] = {"functional": functional}
 
     def _check_conflict(self, fact: Fact, wm: dict) -> Optional[tuple]:
+        """Return (new_fact, existing_fact) if `fact` contradicts a functional predicate, else None."""
         subj, pred, obj = fact
         if pred in self.predicates and self.predicates[pred].get("functional", False):
             for existing_fact in wm:
@@ -242,6 +248,7 @@ class Engine:
         conflicts = []
 
         def get_vials_for_term(term):
+            """Vial ids for a term: in-memory index first, then the store (loading new vials lazily)."""
             v_ids = list(index.get(term, ()))
             if self.store is not None:
                 store_ids = self.store.get_vial_ids_for_term(term)

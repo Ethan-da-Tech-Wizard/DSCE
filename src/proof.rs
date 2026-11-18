@@ -1,3 +1,7 @@
+// Program: DSCE - proof.rs
+// Programmer: Ethan-da-Tech-Wizard (written with Claude, an AI assistant)
+// Last Modified: 2026-11-18
+// Purpose: Derivation records (how each fact was established) and text rendering of proof trees.
 //! Proof construction and rendering — how the DSCE shows its work.
 //!
 //! THE KEY DESIGN DECISION in this file: proofs are not built as a separate
@@ -85,10 +89,12 @@ fn render_node(
     is_root: bool,
     lines: &mut Vec<String>,
 ) {
+    // Look up how this fact was derived; a gap would mean a broken working memory.
     let Some(d) = derivations.get(fact) else {
         lines.push(format!("{prefix}?? missing derivation for {}", fact_str(fact)));
         return;
     };
+    // Describe the justification: an axiom (with evidence) or a rule firing.
     let because = match &d.rule_name {
         None => {
             let mut s = format!("axiom in vial '{}'", d.vial_id);
@@ -99,6 +105,7 @@ fn render_node(
         }
         Some(rule) => format!("by rule '{}' in vial '{}'", rule, d.vial_id),
     };
+    // Pick the tree connector: none for the root, else an elbow or a tee.
     let connector = if is_root {
         ""
     } else if is_last {
@@ -111,6 +118,7 @@ fn render_node(
         fact_str(fact),
         d.confidence
     ));
+    // Children inherit the indentation, with a rail continuing if more siblings follow.
     let child_prefix = if is_root {
         prefix.to_string()
     } else if is_last {
