@@ -7,6 +7,20 @@
 //          interactive proof tree view, generated code editor, and console output.
 // ==============================================================================
 
+// How this file fits the app: build.rs compiles it with slint_build at build time, which generates the Rust
+// types `AppWindow`, `VialInfo` and `ProofLine` that gui_main.rs includes with `slint::include_modules!()`.
+// Data flows one way into this file (Rust sets the `in-out` properties) and user actions flow out through
+// the two callbacks (`synthesize`, `run-sandbox`). There is no business logic here.
+//
+// Layout map (window is 1200x800): left sidebar with the prompt, language picker, Synthesize button and
+// status box; centre column listing all vials with activation highlighting; right panel with three tabs
+// (assembled code, Datalog proof, sandbox run output).
+//
+// Colour language: near-black navy backgrounds, translucent white borders for card edges, cyan (#00ffff) =
+// active/selected, violet (#bd00ff) = rule-derived proof steps, green (#39ff14) = ready/console output,
+// slate greys (#64748b, #94a3b8) for secondary text.
+//
+// Fonts: "Outfit" for the UI and "Fira Code" for code and logs; if a font is missing Slint falls back to the system default.
 // Standard Slint widgets. (LineEdit is imported but not used below.)
 import { Button, LineEdit, TextEdit, ComboBox, ScrollView } from "std-widgets.slint";
 
@@ -27,31 +41,55 @@ export struct ProofLine {
 }
 
 // Main window. Layout: left sidebar (input and controls) and right dashboard (vial status list plus a tabbed code/proof/run area). All logic lives in Rust; this file only declares properties, callbacks and visuals.
+// Exported so the generated Rust type is public in the binary's namespace. `inherits Window` makes it a top-level native window.
 export component AppWindow inherits Window {
+    // Window title; "Offline Standalone" states that no network or model is needed (the harvester is keyword-based).
     title: "DSCE Studio - Offline Standalone GUI";
+
+    // Fixed initial size; the layouts below stretch with the window, but the sidebar (280px) and vial column (380px) keep their widths.
     width: 1200px;
     height: 800px;
+
+    // Darkest layer. Panels use slightly lighter fills (#0c0c1c, translucent #0c0c1c) so they read as raised cards.
     background: #06060c;
+
+    // Applies to every Text unless it sets its own font-family (code areas use Fira Code).
     default-font-family: "Outfit";
 
     // `in-out` properties can be read and written from Rust (set_vials, set_assembled_code, ...); Slint turns the dashes into underscores in the generated API.
     // Bindings exposed to Rust logic
+    // Property names use dashes in Slint and become snake_case setters in Rust (`vials` -> set_vials/get_vials).
     in-out property <[VialInfo]> vials: [];
+
+    // Program text produced by the last query; shown in tab 0 and passed to the Execute button.
     in-out property <string> assembled-code: "";
+
+    // Flattened proof tree rows; depth and rule flag are computed in Rust from the engine's text summary.
     in-out property <[ProofLine]> proof-tree: [];
+
+    // Placeholder until the first run; replaced with compiler/interpreter output (stdout then stderr).
     in-out property <string> console-output: "Sandbox output will stream here...";
+
+    // "READY" (green) or "SYNTHESIZING..." (cyan); the status colour below compares against the exact string "READY".
     in-out property <string> engine-status: "READY";
+
+    // A string, not an int, because Rust formats the number and the label only displays it.
     in-out property <string> active-vials-count: "0";
+
+    // Mirrors the ComboBox so the Execute button (in another part of the tree) can read the choice. Must match the strings gui_main.rs lowercases ("Auto-Detect" -> "auto-detect").
     in-out property <string> selected-lang: "Auto-Detect";
 
     // Callbacks implemented in Rust: synthesize(prompt) runs harvest + reasoning; run-sandbox(code, language) executes the generated program.
+    // Fired by the Synthesize Code button with the prompt text; handled by `window.on_synthesize` in gui_main.rs.
     callback synthesize(string);
     callback run-sandbox(string, string);
 
+    // Top-level layout: sidebar on the left, everything else on the right, with 16px gaps and window padding.
     HorizontalLayout {
         padding: 16px;
         spacing: 16px;
 
+        // Card style used throughout: dark fill, 12px corner radius and a faint 1px white border.
         // 1. Sidebar Panel
         Rectangle {
             width: 280px;
@@ -64,6 +102,7 @@ export component AppWindow inherits Window {
                 padding: 20px;
                 spacing: 16px;
 
+                // Gradient square stands in for a logo, because the app ships no image assets.
                 // Logo/Title
                 HorizontalLayout {
                     spacing: 10px;
@@ -82,6 +121,7 @@ export component AppWindow inherits Window {
                     }
                 }
 
+                // Multi-line TextEdit (not LineEdit) because requests can be long sentences; its text is read when the button is clicked.
                 // Query Request Input
                 VerticalLayout {
                     spacing: 6px;
@@ -92,6 +132,7 @@ export component AppWindow inherits Window {
                         color: #64748b;
                     }
                     // The default text is a ready-made example request so the app produces output on first click.
+                    // Named element (`:=`) so the button's click handler can read `prompt-input.text`.
                     prompt-input := TextEdit {
                         text: "Make a random number generator in Go";
                         font-size: 13px;
@@ -99,6 +140,7 @@ export component AppWindow inherits Window {
                     }
                 }
 
+                // The list matches the languages the harvester and the sandbox runner understand (see gui_main.rs).
                 // Dropdown Language Selector
                 VerticalLayout {
                     spacing: 6px;
@@ -108,6 +150,8 @@ export component AppWindow inherits Window {
                         font-weight: 600;
                         color: #64748b;
                     }
+
+                    // Initial value duplicates the property default on purpose so the dropdown and `selected-lang` start in sync.
                     lang-combo := ComboBox {
                         current-value: "Auto-Detect";
                         model: ["Auto-Detect", "Python", "Go", "Rust", "C++", "C", "C#", "JavaScript", "SQL", "Assembly"];
@@ -118,7 +162,9 @@ export component AppWindow inherits Window {
                     }
                 }
 
+                // The only way to start a query; the status text changes to SYNTHESIZING... from the Rust callback.
                 // Synthesize Button
+                // Standard widget (theme-styled by std-widgets); preferred-height gives it a comfortable click target.
                 synthesize-btn := Button {
                     text: "Synthesize Code";
                     preferred-height: 40px;
@@ -133,6 +179,7 @@ export component AppWindow inherits Window {
                     background: transparent;
                 }
 
+                // Fixed 90px box at the bottom of the sidebar (the spacer above pushes it down).
                 // Engine Status Display
                 Rectangle {
                     height: 90px;
@@ -147,6 +194,7 @@ export component AppWindow inherits Window {
                         HorizontalLayout {
                             Text { text: "Engine Status:"; font-size: 12px; color: #94a3b8; }
                             Text { 
+                                // Bound, so it updates whenever Rust calls set_engine_status.
                                 text: engine-status; 
                                 font-size: 12px; 
                                 font-weight: 700; 
@@ -163,10 +211,12 @@ export component AppWindow inherits Window {
             }
         }
 
+        // Two columns: the vial list (fixed 380px) and the tab area (takes the remaining width).
         // 2. Main reasoning dashboard
         HorizontalLayout {
             spacing: 16px;
             
+            // Despite "grid" in the name this is a vertical scrolling list; activated vials are those the last query's flood reached.
             // Left Content: Vials Activation Grid
             Rectangle {
                 width: 380px;
@@ -186,10 +236,12 @@ export component AppWindow inherits Window {
                         color: #94a3b8;
                     }
 
+                    // Needed because the number of vials is unbounded; ScrollView clips and scrolls the repeater.
                     ScrollView {
                         VerticalLayout {
                             spacing: 8px;
                             // Repeater: one card per vial; activated vials get a cyan background and border.
+                            // 50px fixed height keeps the list rhythm regular; background and border change together when `activated` flips.
                             for vial in vials: Rectangle {
                                 height: 50px;
                                 background: vial.activated ? rgba(0, 255, 255, 0.15) : rgba(255, 255, 255, 0.02);
@@ -212,11 +264,14 @@ export component AppWindow inherits Window {
                                             text: vial.concept;
                                             font-size: 10px;
                                             color: #94a3b8;
+
+                                            // `elide` shortens long concept descriptions with an ellipsis instead of overflowing the 50px card.
                                             overflow: elide;
                                         }
                                     }
                                     Rectangle { background: transparent; }
                                     Text {
+                                        // Only the fact count is shown (rules_count is available in the model but not displayed here).
                                         text: "Facts: " + vial.facts-count;
                                         font-size: 10px;
                                         color: #64748b;
@@ -229,6 +284,7 @@ export component AppWindow inherits Window {
                 }
             }
 
+            // Tabs are hand-built (Rectangle + TouchArea) because the standard TabWidget cannot be styled to match this theme.
             // Right Content: Code Playground Tabs
             Rectangle {
                 background: rgba(12, 12, 28, 0.65);
@@ -246,8 +302,10 @@ export component AppWindow inherits Window {
                         height: 32px;
                         
                         // Tab state lives on this layout: 0 = assembled code, 1 = proof, 2 = run output. The three Rectangles below act as tab buttons.
+                        // Plain property on the header layout, so it is referenced as `tab-header.active-tab` from the content switcher.
                         property <int> active-tab: 0;
 
+                        // The three tab buttons share one pattern: highlighted background/border/text when active, a TouchArea that sets the index when clicked.
                         t0 := Rectangle {
                             background: active-tab == 0 ? rgba(0, 255, 255, 0.1) : transparent;
                             border-radius: 6px;
@@ -275,7 +333,9 @@ export component AppWindow inherits Window {
                     }
 
                     // `if` blocks instantiate only the active tab's content.
+                    // Only one of these three blocks exists at a time, so hidden tabs cost nothing to render.
                     // Content switcher
+                    // Tab 0: the generated program as plain text in a monospace font; ScrollView handles long listings.
                     if tab-header.active-tab == 0 : ScrollView {
                         Text {
                             text: assembled-code;
@@ -285,6 +345,7 @@ export component AppWindow inherits Window {
                         }
                     }
 
+                    // Tab 1: the proof tree as rows of 20px, each indented by its depth; rule-derived steps are violet.
                     if tab-header.active-tab == 1 : ScrollView {
                         VerticalLayout {
                             spacing: 4px;
@@ -304,8 +365,12 @@ export component AppWindow inherits Window {
                         }
                     }
 
+                    // Tab 2: the Execute button on top and a console-style output area below it. The button sends the current
+                    // code and the selected language to Rust (`run-sandbox`), which compiles/runs it and writes `console-output`.
                     if tab-header.active-tab == 2 : VerticalLayout {
                         spacing: 8px;
+
+                        // Passes `assembled-code` (not an editable field), so the user runs exactly what was synthesized.
                         run-btn := Button {
                             text: "Execute Sandbox Program";
                             preferred-height: 36px;
@@ -314,6 +379,7 @@ export component AppWindow inherits Window {
                             }
                         }
                         Rectangle {
+                            // Console look: darker than the surrounding card, with green text like a terminal.
                             background: #020205;
                             border-radius: 6px;
                             border-width: 1px;
