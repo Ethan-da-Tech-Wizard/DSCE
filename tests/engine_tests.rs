@@ -11,6 +11,7 @@
 //! Integration tests mirroring the Python prototype's test suite
 //! (tests/test_engine.py and tests/test_new_features.py).
 
+// Integration tests for the public library API; each test builds its own engine/database so they are independent.
 use dsce::compute::Compute;
 use dsce::db_store::SqliteVialStore;
 use dsce::demo_kb::{build_engine, demo_vials};
@@ -18,6 +19,7 @@ use dsce::engine::Engine;
 use dsce::facts::Term;
 use dsce::vial::{Rule, Vial};
 
+// Shorthand for a string term.
 fn t(s: &str) -> Term {
     Term::str(s)
 }

@@ -29,6 +29,7 @@
 //! degrades to "no compute" instead of failing the whole vial.
 
 use std::path::Path;
+// rusqlite's Connection is not Sync, so it is wrapped in a Mutex to let the store be shared across threads.
 use std::sync::Mutex;
 
 use rusqlite::{params, Connection};
@@ -41,11 +42,13 @@ use crate::vial::{Rule, Vial};
 /// Errors surfaced by the store: either SQLite itself, or a
 /// (de)serialization problem in our own encoding.
 #[derive(Debug)]
+/// Sqlite wraps driver errors; Encoding covers our own JSON/term decoding problems and "not found".
 pub enum StoreError {
     Sqlite(rusqlite::Error),
     Encoding(String),
 }
 
+// Human-readable messages for CLI output.
 impl std::fmt::Display for StoreError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -57,15 +60,20 @@ impl std::fmt::Display for StoreError {
 
 impl std::error::Error for StoreError {}
 
+// Lets `?` convert driver errors automatically.
 impl From<rusqlite::Error> for StoreError {
     fn from(e: rusqlite::Error) -> StoreError {
         StoreError::Sqlite(e)
     }
 }
 
+/// Shorthand for results of store operations.
 pub type StoreResult<T> = Result<T, StoreError>;
 
+/// SQLite-backed vial storage. The schema mirrors the Python implementation so a
+/// database file can be shared between the two engines.
 pub struct SqliteVialStore {
+    // Single long-lived connection; lock it for the duration of each operation.
     conn: Mutex<Connection>,
 }
 
@@ -84,6 +92,8 @@ impl SqliteVialStore {
         Ok(SqliteVialStore { conn: Mutex::new(conn) })
     }
 
+    // Create tables and indexes if missing (idempotent). Evidence/neighbors are JSON TEXT;
+    // term_index is the inverted index term -> vial used to wake vials without loading all of them.
     fn init_schema(conn: &Connection) -> StoreResult<()> {
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS vials (
@@ -123,7 +133,9 @@ impl SqliteVialStore {
 
     /// Persist one vial (metadata, facts, rules, term index) atomically.
     pub fn save_vial(&self, vial: &Vial) -> StoreResult<()> {
+        // A poisoned mutex means another thread panicked mid-write; panicking here is intentional rather than using possibly inconsistent state.
         let mut conn = self.conn.lock().expect("store mutex poisoned");
+        // One transaction so a vial is saved all-or-nothing; dropping `tx` on an early error rolls everything back.
         let tx = conn.transaction()?;
 
         tx.execute(
@@ -138,6 +150,7 @@ impl SqliteVialStore {
             ],
         )?;
 
+        // Replace semantics: delete the old child rows first so removed facts do not linger.
         tx.execute("DELETE FROM facts WHERE vial_id = ?1", params![vial.id])?;
         for (subject, predicate, object) in &vial.facts {
             tx.execute(
@@ -148,6 +161,7 @@ impl SqliteVialStore {
 
         tx.execute("DELETE FROM rules WHERE vial_id = ?1", params![vial.id])?;
         for rule in &vial.rules {
+            // Only expression-DSL computes have source text; a native closure is refused with an error instead of being silently dropped on save.
             let compute_body: Option<String> = match &rule.compute {
                 None => None,
                 Some(compute) => Some(
@@ -188,6 +202,7 @@ impl SqliteVialStore {
             )?;
         }
 
+        // The index is rebuilt from vial.terms() on every save so it always matches the stored content.
         tx.execute("DELETE FROM term_index WHERE vial_id = ?1", params![vial.id])?;
         for term in vial.terms() {
             tx.execute(
@@ -203,6 +218,7 @@ impl SqliteVialStore {
     /// The ids of every vial indexed under `term`, sorted for determinism.
     pub fn get_vial_ids_for_term(&self, term: &Term) -> Vec<String> {
         let conn = self.conn.lock().expect("store mutex poisoned");
+        // ORDER BY gives a deterministic wake order. Failures yield an empty list: a lookup that fails simply wakes nothing.
         let mut stmt = match conn.prepare("SELECT vial_id FROM term_index WHERE term = ?1 ORDER BY vial_id") {
             Ok(stmt) => stmt,
             Err(_) => return Vec::new(),
@@ -214,6 +230,7 @@ impl SqliteVialStore {
 
     /// Load one vial, fully materialized, by id.
     pub fn load_vial(&self, vial_id: &str) -> StoreResult<Vial> {
+        // The lock is held for the whole load, so the several SELECTs see one consistent snapshot.
         let conn = self.conn.lock().expect("store mutex poisoned");
 
         let (concept, evidence_json, confidence, neighbors_json) = conn
@@ -240,6 +257,7 @@ impl SqliteVialStore {
         let neighbors: Vec<String> = serde_json::from_str(&neighbors_json)
             .map_err(|e| StoreError::Encoding(format!("bad neighbors JSON for {vial_id:?}: {e}")))?;
 
+        // Inner blocks below scope each prepared statement so it is dropped before the next one is prepared.
         let mut facts: Vec<Fact> = Vec::new();
         {
             let mut stmt =
@@ -346,6 +364,7 @@ fn term_to_json(term: &Term) -> Value {
     }
 }
 
+/// Decode a JSON value into a term; integers are tried before floats so 3 stays Int.
 pub(crate) fn term_from_json(value: &Value) -> StoreResult<Term> {
     match value {
         Value::String(s) => Ok(Term::str(s.clone())),
@@ -363,6 +382,7 @@ pub(crate) fn term_from_json(value: &Value) -> StoreResult<Term> {
     }
 }
 
+/// Decode a 3-element JSON array into a (subject, predicate, object) triple, rejecting any other length.
 pub(crate) fn triple_from_json(value: &Value) -> StoreResult<(Term, Term, Term)> {
     let items = value
         .as_array()
@@ -376,6 +396,7 @@ pub(crate) fn triple_from_json(value: &Value) -> StoreResult<(Term, Term, Term)>
 }
 
 #[cfg(test)]
+// Note: facts are stored as plain text, so a string like "12" is read back as the integer 12 (inherited from the Python store).
 mod tests {
     use super::*;
 

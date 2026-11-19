@@ -44,6 +44,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+// Used by the flood loop to match rules in parallel (par_iter). Ordering is restored afterwards, see STEP 4.
 use rayon::prelude::*;
 
 use crate::db_store::SqliteVialStore;
@@ -68,6 +69,7 @@ pub struct PredicateInfo {
     pub emits_sand: bool,
 }
 
+// Default: ordinary predicate (not functional, does emit sand), so unregistered predicates behave like plain relations.
 impl Default for PredicateInfo {
     fn default() -> PredicateInfo {
         PredicateInfo {
@@ -222,6 +224,7 @@ impl Default for Engine {
 }
 
 impl Engine {
+    /// An empty engine with the default tick budget of 50 and no database store.
     pub fn new() -> Engine {
         Engine {
             max_ticks: 50,
@@ -231,6 +234,7 @@ impl Engine {
         }
     }
 
+    /// An engine whose vials are loaded lazily from `store` as the flood reaches them (in-memory vials may still be added).
     pub fn with_store(store: SqliteVialStore) -> Engine {
         Engine {
             store: Some(store),
@@ -250,6 +254,7 @@ impl Engine {
         self.predicates.entry(name.into()).or_default().emits_sand = false;
     }
 
+    /// Whether facts using `pred` should generate sand. Unknown or non-string predicates default to true.
     fn predicate_emits_sand(&self, pred: &Term) -> bool {
         match pred {
             Term::Str(name) => self.predicates.get(name).map(|p| p.emits_sand).unwrap_or(true),
@@ -289,6 +294,7 @@ impl Engine {
     fn vials_for_term(&mut self, index: &BTreeMap<Term, Vec<String>>, term: &Term) -> Vec<String> {
         let mut ids: Vec<String> = index.get(term).cloned().unwrap_or_default();
         if let Some(store) = &self.store {
+            // Database hits are appended after in-memory ones, preserving a stable order for determinism.
             for vial_id in store.get_vial_ids_for_term(term) {
                 if !self.vials.contains_key(&vial_id) {
                     if let Ok(vial) = store.load_vial(&vial_id) {
@@ -317,6 +323,7 @@ impl Engine {
         if !functional {
             return None;
         }
+        // Linear scan of working memory per candidate fact; acceptable at prototype scale (see the module note on complexity).
         for existing in wm.keys() {
             if &existing.0 == subj && &existing.1 == pred && &existing.2 != obj {
                 return Some((fact.clone(), existing.clone()));
@@ -349,6 +356,7 @@ impl Engine {
         // Woken vials: membership set + activation order.
         let mut active: BTreeSet<String> = BTreeSet::new();
         let mut activation_order: Vec<String> = Vec::new();
+        // Conflicts are recorded and reported, never resolved: both facts stay in working memory so the user sees the disagreement.
         let mut conflicts: Vec<(Fact, Fact)> = Vec::new();
 
         // --- SEEDING ----------------------------------------------------
@@ -393,6 +401,7 @@ impl Engine {
                 grains.push(Grain::new(fact.2.clone(), "query", 0));
             }
         }
+        // Telemetry counters: total sand emitted and the number of ticks actually run.
         let mut total_grains = grains.len();
         let mut ticks = 0;
 
@@ -474,6 +483,7 @@ impl Engine {
             // order, rule order), and the single-threaded merge below
             // applies "first derivation wins" in that stable order.
             // Parallelism therefore never costs determinism.
+            // Flatten (vial, rule) pairs into one list so rayon can distribute them evenly.
             let firings: Vec<(&Vial, &Rule)> = activation_order
                 .iter()
                 .filter_map(|vial_id| self.vials.get(vial_id))
@@ -532,6 +542,7 @@ impl Engine {
         // --- ANSWER EXTRACTION --------------------------------------------
         // Scan settled working memory (sorted BTreeMap iteration, so answer
         // order is reproducible) for every fact that unifies with the goal.
+        // Starting from empty bindings, every fact that unifies with the goal is an answer.
         let empty = Bindings::new();
         let answers: Vec<Answer> = wm
             .iter()

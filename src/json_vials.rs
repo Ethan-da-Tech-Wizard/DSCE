@@ -36,6 +36,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// serde derives the JSON-to-struct mapping for the two *Doc types below.
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -45,11 +46,13 @@ use crate::engine::Engine;
 use crate::facts::{Fact, Pattern};
 use crate::vial::{Rule, Vial};
 
+/// Serde default for a missing "confidence": fully trusted (1.0).
 fn default_confidence() -> f64 {
     1.0
 }
 
 #[derive(Deserialize)]
+/// On-disk shape of a rule. Premises/conclusion stay as raw JSON `Value`s here and are converted into typed terms afterwards, so errors can name the rule.
 struct RuleDoc {
     name: String,
     #[serde(default)]
@@ -62,6 +65,7 @@ struct RuleDoc {
 }
 
 #[derive(Deserialize)]
+/// On-disk shape of a vial. Only `id` is required; every other field defaults to empty/1.0, which keeps hand-written vial files short.
 struct VialDoc {
     id: String,
     #[serde(default)]
@@ -78,6 +82,7 @@ struct VialDoc {
     confidence: f64,
 }
 
+// Decode one JSON triple, prefixing any error with `context` (e.g. which rule of which vial).
 fn triple(value: &Value, context: &str) -> Result<Pattern, String> {
     triple_from_json(value).map_err(|e| format!("{context}: {e}"))
 }
@@ -99,6 +104,7 @@ pub fn vial_from_json(text: &str) -> Result<Vial, String> {
             .map(|p| triple(p, &context))
             .collect::<Result<Vec<_>, _>>()?;
         let conclusion = triple(&rule_doc.conclusion, &context)?;
+        // Parse the compute DSL now so a malformed expression fails the load instead of being silently ignored later.
         let compute = match rule_doc.compute {
             None => None,
             Some(src) => Some(Compute::expr(&src).map_err(|e| format!("{context}: bad compute: {e}"))?),
@@ -137,6 +143,7 @@ pub fn load_vials_dir(dir: impl AsRef<Path>) -> Result<Vec<Vial>, String> {
     let dir = dir.as_ref();
     let mut paths: Vec<PathBuf> = Vec::new();
     collect_json_files(dir, &mut paths)?;
+    // Sorting makes load order independent of filesystem iteration order, which varies between systems.
     paths.sort();
     paths.into_iter().map(load_vial_file).collect()
 }
@@ -158,6 +165,7 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     }
     engine.register_predicate("located_in", true);
     engine.register_predicate("height", true);
+    // Annotation predicates are documentation-like facts that rules may match but that do not carry activation (see the doc comment above).
     for annotation in [
         "function",
         "param",
@@ -178,6 +186,7 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     Ok(engine)
 }
 
+// Recursively gather every `*.json` file under `dir` into `out` (unordered; the caller sorts).
 fn collect_json_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
     let entries = fs::read_dir(dir).map_err(|e| format!("cannot read directory {}: {e}", dir.display()))?;
     for entry in entries {
@@ -193,6 +202,7 @@ fn collect_json_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> 
 }
 
 #[cfg(test)]
+// Tests cover successful parsing and the "bad compute fails loudly" guarantee.
 mod tests {
     use super::*;
     use crate::facts::Term;

@@ -7,8 +7,10 @@
 //          interactive proof tree view, generated code editor, and console output.
 // ==============================================================================
 
+// Standard Slint widgets. (LineEdit is imported but not used below.)
 import { Button, LineEdit, TextEdit, ComboBox, ScrollView } from "std-widgets.slint";
 
+// One row of the vial list. Rust (gui_main.rs) fills this model and flips `activated` after each query to highlight the vials the reasoning woke up.
 export struct VialInfo {
     id: string,
     concept: string,
@@ -17,12 +19,14 @@ export struct VialInfo {
     activated: bool,
 }
 
+// One line of the rendered proof tree: `depth` controls indentation, `is_rule` selects the highlight colour for rule-derived steps.
 export struct ProofLine {
     text: string,
     depth: int,
     is_rule: bool,
 }
 
+// Main window. Layout: left sidebar (input and controls) and right dashboard (vial status list plus a tabbed code/proof/run area). All logic lives in Rust; this file only declares properties, callbacks and visuals.
 export component AppWindow inherits Window {
     title: "DSCE Studio - Offline Standalone GUI";
     width: 1200px;
@@ -30,6 +34,7 @@ export component AppWindow inherits Window {
     background: #06060c;
     default-font-family: "Outfit";
 
+    // `in-out` properties can be read and written from Rust (set_vials, set_assembled_code, ...); Slint turns the dashes into underscores in the generated API.
     // Bindings exposed to Rust logic
     in-out property <[VialInfo]> vials: [];
     in-out property <string> assembled-code: "";
@@ -39,6 +44,7 @@ export component AppWindow inherits Window {
     in-out property <string> active-vials-count: "0";
     in-out property <string> selected-lang: "Auto-Detect";
 
+    // Callbacks implemented in Rust: synthesize(prompt) runs harvest + reasoning; run-sandbox(code, language) executes the generated program.
     callback synthesize(string);
     callback run-sandbox(string, string);
 
@@ -85,6 +91,7 @@ export component AppWindow inherits Window {
                         font-weight: 600;
                         color: #64748b;
                     }
+                    // The default text is a ready-made example request so the app produces output on first click.
                     prompt-input := TextEdit {
                         text: "Make a random number generator in Go";
                         font-size: 13px;
@@ -104,6 +111,7 @@ export component AppWindow inherits Window {
                     lang-combo := ComboBox {
                         current-value: "Auto-Detect";
                         model: ["Auto-Detect", "Python", "Go", "Rust", "C++", "C", "C#", "JavaScript", "SQL", "Assembly"];
+                        // Remember the chosen language; it is passed to run-sandbox when the Execute button is pressed.
                         selected(val) => {
                             selected-lang = val;
                         }
@@ -119,6 +127,7 @@ export component AppWindow inherits Window {
                     }
                 }
 
+                // A transparent Rectangle with no fixed height expands to fill space, pushing the status box to the bottom of the sidebar.
                 // Empty rectangle acting as flexible spacer
                 Rectangle {
                     background: transparent;
@@ -141,6 +150,7 @@ export component AppWindow inherits Window {
                                 text: engine-status; 
                                 font-size: 12px; 
                                 font-weight: 700; 
+                                // Green when idle, cyan while working.
                                 color: engine-status == "READY" ? #39ff14 : #00ffff; 
                             }
                         }
@@ -179,6 +189,7 @@ export component AppWindow inherits Window {
                     ScrollView {
                         VerticalLayout {
                             spacing: 8px;
+                            // Repeater: one card per vial; activated vials get a cyan background and border.
                             for vial in vials: Rectangle {
                                 height: 50px;
                                 background: vial.activated ? rgba(0, 255, 255, 0.15) : rgba(255, 255, 255, 0.02);
@@ -234,6 +245,7 @@ export component AppWindow inherits Window {
                         spacing: 8px;
                         height: 32px;
                         
+                        // Tab state lives on this layout: 0 = assembled code, 1 = proof, 2 = run output. The three Rectangles below act as tab buttons.
                         property <int> active-tab: 0;
 
                         t0 := Rectangle {
@@ -262,6 +274,7 @@ export component AppWindow inherits Window {
                         }
                     }
 
+                    // `if` blocks instantiate only the active tab's content.
                     // Content switcher
                     if tab-header.active-tab == 0 : ScrollView {
                         Text {
@@ -278,6 +291,7 @@ export component AppWindow inherits Window {
                             for line in proof-tree: Rectangle {
                                 height: 20px;
                                 HorizontalLayout {
+                                    // Indent each proof line by its tree depth.
                                     padding-left: line.depth * 10px;
                                     Text {
                                         text: line.text;

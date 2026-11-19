@@ -42,6 +42,7 @@
 //! an unbound variable makes evaluation fail, which the engine treats as
 //! "this rule cannot conclude anything for this match".
 
+// Arc lets a Native closure be shared cheaply when rules are cloned.
 use std::fmt;
 use std::sync::Arc;
 
@@ -54,6 +55,7 @@ pub enum Compute {
     /// Parsed arithmetic program; serializable via [`Compute::source`].
     Expr(ExprProgram),
     /// Arbitrary pure closure; library-only, not serializable.
+    // Send + Sync are required so rules can fire from rayon worker threads.
     Native(Arc<dyn Fn(&Bindings) -> Bindings + Send + Sync>),
 }
 
@@ -109,25 +111,32 @@ pub struct ExprProgram {
 }
 
 impl ExprProgram {
+    /// Parse `?var = expr; ?var2 = expr2`. Errors name the offending statement so
+    /// a bad rule is rejected at load time rather than failing silently during a query.
     pub fn parse(source: &str) -> Result<ExprProgram, String> {
         let mut assignments = Vec::new();
+        // Statements are separated by ';' and trailing/empty ones are ignored.
         for stmt in source.split(';') {
             let stmt = stmt.trim();
             if stmt.is_empty() {
                 continue;
             }
             let (target, body) = stmt
+                // Split at the FIRST '=', so everything right of it is the expression.
                 .split_once('=')
                 .ok_or_else(|| format!("expected '?var = expr' in {stmt:?}"))?;
             let target = target.trim();
+            // Only variables can be assigned, which keeps computed values distinguishable from constants.
             if !target.starts_with('?') {
                 return Err(format!("assignment target {target:?} must be a ?variable"));
             }
             let mut parser = Parser::new(body)?;
             let expr = parser.parse_expr()?;
+            // Reject trailing garbage such as "?a = 1 2".
             parser.expect_end()?;
             assignments.push((target.to_string(), expr));
         }
+        // A program that does nothing is almost certainly a mistake.
         if assignments.is_empty() {
             return Err("empty compute expression".to_string());
         }
@@ -137,6 +146,8 @@ impl ExprProgram {
         })
     }
 
+    // Run the assignments in order. Each result is stored in `extra` immediately so later
+    // assignments can use earlier ones; `?` aborts the whole program on any failure.
     fn eval(&self, bindings: &Bindings) -> Option<Bindings> {
         let mut extra = Bindings::new();
         for (target, expr) in &self.assignments {
@@ -148,6 +159,7 @@ impl ExprProgram {
 }
 
 #[derive(Debug, Clone)]
+/// Expression syntax tree produced by the parser.
 enum Expr {
     Int(i64),
     Float(f64),
@@ -158,6 +170,7 @@ enum Expr {
 }
 
 #[derive(Debug, Clone, Copy)]
+/// Binary arithmetic operators.
 enum Op {
     Add,
     Sub,
@@ -175,6 +188,7 @@ enum Value {
 }
 
 impl Value {
+    // Convert a computed value back into a fact term (floats go through Term::float to get a hashable wrapper).
     fn into_term(self) -> Term {
         match self {
             Value::Int(i) => Term::Int(i),
@@ -196,6 +210,7 @@ impl Value {
     fn render(&self) -> String {
         match self {
             Value::Int(i) => i.to_string(),
+            // {:?} keeps a ".0" on whole floats (2.0 not 2) so the text round-trips as a float.
             Value::Float(f) => format!("{f:?}"),
             Value::Str(s) => s.clone(),
         }
@@ -203,6 +218,8 @@ impl Value {
 }
 
 impl Expr {
+    // Evaluate recursively. `extra` (values computed earlier in this program) shadows
+    // `bindings` (values matched from premises). None signals "undefined here".
     fn eval(&self, bindings: &Bindings, extra: &Bindings) -> Option<Value> {
         match self {
             Expr::Int(i) => Some(Value::Int(*i)),
@@ -226,6 +243,7 @@ impl Expr {
                 let l = lhs.eval(bindings, extra)?;
                 let r = rhs.eval(bindings, extra)?;
                 match op {
+                    // checked_* arithmetic returns None on i64 overflow instead of wrapping or panicking.
                     Op::Add => match (l, r) {
                         (Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_add(b)?)),
                         // If either side is a string, `+` concatenates —
@@ -260,6 +278,7 @@ impl Expr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+// Lexer output tokens. Numbers stay as text until the parser decides int vs float.
 enum Token {
     Num(String),
     Str(String),
@@ -272,12 +291,15 @@ enum Token {
     RParen,
 }
 
+/// Recursive-descent parser over the token list. Grammar (lowest to highest precedence):
+/// expr, term, factor, so * and / bind tighter than + and -.
 struct Parser {
     tokens: Vec<Token>,
     pos: usize,
 }
 
 impl Parser {
+    // Tokenise `src`. Whitespace is skipped; any unknown character is an error.
     fn new(src: &str) -> Result<Parser, String> {
         let mut tokens = Vec::new();
         let chars: Vec<char> = src.chars().collect();
@@ -310,6 +332,7 @@ impl Parser {
                     tokens.push(Token::RParen);
                     i += 1;
                 }
+                // String literal in either quote style; the same quote character ends it, with backslash escapes.
                 '"' | '\'' => {
                     let quote = c;
                     i += 1;
@@ -344,6 +367,7 @@ impl Parser {
                     }
                     tokens.push(Token::Str(text));
                 }
+                // Variable: '?' followed by letters, digits or '_'; a bare '?' is rejected.
                 '?' => {
                     let start = i;
                     i += 1;
@@ -355,6 +379,7 @@ impl Parser {
                     }
                     tokens.push(Token::Var(chars[start..i].iter().collect()));
                 }
+                // Number: digits and dots are slurped together, and validity is checked in parse_factor.
                 c if c.is_ascii_digit() || c == '.' => {
                     let start = i;
                     while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
@@ -368,10 +393,12 @@ impl Parser {
         Ok(Parser { tokens, pos: 0 })
     }
 
+    // Look at the next token without consuming it.
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.pos)
     }
 
+    // Consume and return the next token (None at end of input).
     fn advance(&mut self) -> Option<Token> {
         let tok = self.tokens.get(self.pos).cloned();
         if tok.is_some() {
@@ -380,6 +407,7 @@ impl Parser {
         tok
     }
 
+    // Succeeds only when every token has been consumed.
     fn expect_end(&self) -> Result<(), String> {
         if self.pos == self.tokens.len() {
             Ok(())
@@ -424,6 +452,7 @@ impl Parser {
     fn parse_factor(&mut self) -> Result<Expr, String> {
         match self.advance() {
             Some(Token::Num(text)) => {
+                // A '.' makes it a float literal, otherwise an i64 integer.
                 if text.contains('.') {
                     text.parse::<f64>()
                         .map(Expr::Float)
@@ -436,6 +465,7 @@ impl Parser {
             }
             Some(Token::Str(text)) => Ok(Expr::Str(text)),
             Some(Token::Var(name)) => Ok(Expr::Var(name)),
+            // Unary minus applies to a factor, so "-2 * 3" is (-2) * 3.
             Some(Token::Minus) => Ok(Expr::Neg(Box::new(self.parse_factor()?))),
             Some(Token::LParen) => {
                 let inner = self.parse_expr()?;
@@ -450,9 +480,11 @@ impl Parser {
 }
 
 #[cfg(test)]
+// Unit tests for the compute DSL: arithmetic, precedence, soft failures and string handling.
 mod tests {
     use super::*;
 
+    // Test helper: build a Bindings map from (name, term) pairs.
     fn bindings(pairs: &[(&str, Term)]) -> Bindings {
         pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
     }
@@ -487,6 +519,7 @@ mod tests {
         let extra = c.eval(&bindings(&[("?v", Term::Int(5))])).unwrap();
         assert_eq!(extra.get("?half"), Some(&Term::float(2.5)));
 
+        // Division by zero must yield None (rule skipped), never a panic or infinity.
         let z = Compute::expr("?bad = 1 / 0").unwrap();
         assert!(z.eval(&Bindings::new()).is_none());
     }

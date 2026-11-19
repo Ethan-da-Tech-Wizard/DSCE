@@ -37,6 +37,7 @@
 //!   built-in vocabulary. No network, no model, same output every time —
 //!   this is what the CLI uses, and what tests pin down.
 
+// triple_from_json is reused from db_store so LLM replies and database rows share one term decoder.
 use serde_json::Value;
 
 use crate::db_store::triple_from_json;
@@ -45,6 +46,9 @@ use crate::facts::{Fact, Pattern, Term};
 /// The prompt template for LLM-backed harvesting. Replace `{{REQUEST}}`
 /// with the user's request (or use [`prompt_for`]) and parse the model's
 /// reply with [`parse_response`].
+// The vocabulary listed inside the prompt must match the capabilities the knowledge-base vials
+// actually provide; the model is told to use only those words, because anything else would be
+// a dead-end triple that no vial can satisfy.
 pub const PROMPT_TEMPLATE: &str = r#"You are the Semantic Harvester for the DSCE generic software assembler.
 Translate the user's software request into a Datalog goal and vocabulary triples.
 
@@ -85,6 +89,7 @@ pub fn prompt_for(request: &str) -> String {
 /// What a harvest produces: the app slug, the query goal, and the
 /// vocabulary triples to pour before reasoning.
 #[derive(Debug, Clone)]
+/// (Field meaning: `app` is the snake_case slug, which is also the subject of `goal`.)
 pub struct Harvest {
     pub app: String,
     pub goal: Pattern,
@@ -93,6 +98,7 @@ pub struct Harvest {
 
 /// Parse a strict-JSON harvester reply (LLM output) into a [`Harvest`].
 pub fn parse_response(json: &str) -> Result<Harvest, String> {
+    // Everything from an LLM is untrusted text, so each field is validated and a descriptive error is returned instead of panicking.
     let value: Value = serde_json::from_str(json).map_err(|e| format!("bad harvest JSON: {e}"))?;
     let goal = triple_from_json(
         value.get("goal").ok_or_else(|| "harvest JSON missing \"goal\"".to_string())?,
@@ -106,6 +112,7 @@ pub fn parse_response(json: &str) -> Result<Harvest, String> {
         .map(|t| triple_from_json(t).map_err(|e| format!("bad triple: {e}")))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Harvest {
+        // The app name is read back from the goal's subject so the two can never disagree.
         app: goal.0.to_string(),
         goal,
         triples,
@@ -119,6 +126,7 @@ const STOPWORDS: &[&str] = &[
     "app", "application", "program", "software", "simple",
 ];
 
+// True when at least one request token equals one of `keywords` (whole-token match, not substring).
 fn matches_any(tokens: &[String], keywords: &[&str]) -> bool {
     tokens.iter().any(|t| keywords.contains(&t.as_str()))
 }
@@ -141,9 +149,12 @@ const LANGUAGE_KEYWORDS: &[(&str, &[&str])] = &[
 
 /// Deterministic, dependency-free harvesting: keyword-match the request
 /// against the built-in vocabulary. Same request, same harvest, every time.
+/// (Limitation: matching is by whole word only, so very short keywords such as "c" or "go" can
+/// also match ordinary English words in the request.)
 pub fn harvest_offline(request: &str) -> Harvest {
     let tokens: Vec<String> = request
         .to_lowercase()
+        // Split on anything that is not a letter/digit, but keep '+' and '#' so "c++" and "c#" survive as tokens.
         .split(|c: char| !c.is_alphanumeric() && c != '+' && c != '#')
         .filter(|t| !t.is_empty())
         .map(String::from)
@@ -161,16 +172,20 @@ pub fn harvest_offline(request: &str) -> Harvest {
         significant[..significant.len().min(3)].join("_")
     };
 
+    // `a` is the application entity that all later triples are about.
     let a = Term::str(app.clone());
     let mut triples: Vec<Fact> = vec![(a.clone(), Term::str("is_a"), Term::str("application"))];
+    // Every raw token is also asserted (contains_token) so rules can react to words the keyword tables do not cover.
     for token in &tokens {
         triples.push((a.clone(), Term::str("contains_token"), Term::str(token.clone())));
     }
+    // Add a fact only if it is not already present, keeping the output free of duplicates while preserving first-seen order.
     let push = |fact: Fact, triples: &mut Vec<Fact>| {
         if !triples.contains(&fact) {
             triples.push(fact);
         }
     };
+    // Shorthand constructors for the two kinds of triples emitted most often.
     let needs = |cap: &str| (a.clone(), Term::str("needs"), Term::str(cap));
     let feature = |name: &str| {
         [
@@ -222,11 +237,13 @@ pub fn harvest_offline(request: &str) -> Harvest {
     if matches_any(&tokens, &["economy", "scrap", "currency", "points"]) {
         push(needs("currency_economy"), &mut triples);
     }
+    // Complexity tier: requesting advanced mechanics (bosses, status effects, economy) selects the richer game template.
     let mut tier = "mid_tier";
     if matches_any(&tokens, &["boss", "phase", "telegraph", "bosses", "status", "freeze", "burn", "shock", "poison", "economy", "scrap", "currency", "points"]) {
         tier = "high_tier";
     }
     push((a.clone(), Term::str("game_tier"), Term::str(tier)), &mut triples);
+    // The next few blocks choose one variant each (weapon, movement, tower) with a default, so downstream rules always find exactly one value.
     let mut w_type = "shoot_standard";
     if matches_any(&tokens, &["shotgun"]) {
         w_type = "shoot_shotgun";
@@ -264,6 +281,7 @@ pub fn harvest_offline(request: &str) -> Harvest {
         push(needs("complete_gui"), &mut triples);
     }
 
+    // GUI/game framework keywords -> framework name. Several may match, each emits its own needs_gui_framework triple.
     let frameworks = [
         ("pyside6", &["pyside", "pyside6", "qt6"][..]),
         ("pyqt6", &["pyqt", "pyqt6"][..]),
@@ -297,6 +315,7 @@ pub fn harvest_offline(request: &str) -> Harvest {
             push((a.clone(), Term::str("needs_gui_framework"), Term::str(*name)), &mut triples);
         }
     }
+    // From here: keyword groups for classic data-structure / design-pattern / library templates, each mapping to one capability.
     if matches_any(&tokens, &["academic", "ods", "sicp", "linux", "kernel", "pattern", "patterns"]) {
         push(needs("academic_suite"), &mut triples);
     }
@@ -410,6 +429,7 @@ pub fn harvest_offline(request: &str) -> Harvest {
     // fixed LANGUAGE_KEYWORDS order. When the request names none, Python is
     // the default target — the assembly patterns key on this triple, so an
     // unqualified request keeps producing the classic Python program.
+    // Multi-language requests get a JavaScript frontend plus a backend language (Go when none is named); otherwise a single target_language is used.
     let is_multilang = matches_any(&tokens, &["multi", "multilang", "hybrid"]);
     if is_multilang {
         push(needs("multilang_tool"), &mut triples);
@@ -440,6 +460,7 @@ pub fn harvest_offline(request: &str) -> Harvest {
         }
     }
 
+    // Tunable parameters parsed from phrases like "speed 7" or "limit 50", with defaults. They only take effect when the numeric word follows the keyword.
     let mut color = "cyan".to_string();
     let mut speed = "3".to_string();
     let mut limit = "10".to_string();
@@ -470,9 +491,11 @@ pub fn harvest_offline(request: &str) -> Harvest {
 }
 
 #[cfg(test)]
+// Tests pin the offline harvester's exact output (determinism) and the JSON/prompt helpers.
 mod tests {
     use super::*;
 
+    // Shorthand for building a string term.
     fn t(s: &str) -> Term {
         Term::str(s)
     }
@@ -497,6 +520,7 @@ mod tests {
     }
 
     #[test]
+    // The same request must always produce the same triples in the same order.
     fn harvest_is_deterministic() {
         let a = harvest_offline("Make a multiplayer grid game with a scoring system");
         let b = harvest_offline("Make a multiplayer grid game with a scoring system");

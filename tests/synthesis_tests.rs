@@ -11,19 +11,24 @@
 //! Integration tests for the generic software assembler: JSON vials,
 //! the Semantic Harvester, and end-to-end program synthesis.
 
+// These tests read the real JSON vials in vials_synthesis/ and run the full pipeline
+// (offline harvest -> flood -> assembled code). They need no network and no model.
 use dsce::engine::QueryResult;
 use dsce::facts::Term;
 use dsce::harvester::harvest_offline;
 use dsce::json_vials::{engine_from_dir, load_vials_dir};
 
+// Shorthand for a string term.
 fn t(s: &str) -> Term {
     Term::str(s)
 }
 
+// Absolute path to vials_synthesis/, anchored on CARGO_MANIFEST_DIR so tests work from any working directory.
 fn vials_dir() -> String {
     format!("{}/vials_synthesis", env!("CARGO_MANIFEST_DIR"))
 }
 
+// Run the whole pipeline for one natural-language request with a fresh engine, so tests cannot affect each other.
 fn synthesize(request: &str) -> QueryResult {
     let mut engine = engine_from_dir(vials_dir()).expect("synthesis KB loads");
     let harvest = harvest_offline(request);
@@ -31,6 +36,7 @@ fn synthesize(request: &str) -> QueryResult {
 }
 
 #[test]
+// Pins the exact set of shipped vial ids: adding or removing a vial must be a deliberate change to this list.
 fn synthesis_kb_loads_completely() {
     let vials = load_vials_dir(vials_dir()).unwrap();
     let mut ids: Vec<&str> = vials.iter().map(|v| v.id.as_str()).collect();
@@ -126,6 +132,7 @@ fn library_vials_are_decoupled() {
 }
 
 #[test]
+// The headline example from the README: a multiplayer grid game with scoring.
 fn flagship_request_assembles_full_program() {
     let result = synthesize("Make a multiplayer grid game with a scoring system");
     assert!(result.answers.len() >= 1, "expected at least one assembled program");
@@ -169,6 +176,7 @@ fn flagship_request_assembles_full_program() {
 }
 
 #[test]
+// Two independent runs of the same request must produce byte-identical summaries.
 fn synthesis_is_deterministic() {
     let a = synthesize("Make a multiplayer grid game with a scoring system").summary();
     let b = synthesize("Make a multiplayer grid game with a scoring system").summary();
@@ -220,6 +228,7 @@ fn vocabulary_triples_steer_generic_patterns() {
 }
 
 #[test]
+// With no language named, exactly one answer (Python) is expected: the default target.
 fn random_number_generator_synthesis() {
     let result = synthesize("Make a random number generator");
     assert_eq!(result.answers.len(), 1);
