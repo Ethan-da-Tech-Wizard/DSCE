@@ -8,6 +8,7 @@
 #          records to scratch/dictionary.tsv.
 # ==============================================================================
 
+# Run from the repo root; paths are relative. Offline: only reads/writes local files.
 import json
 import os
 
@@ -17,6 +18,7 @@ def export_to_tsv():
     tsv_path = "scratch/dictionary.tsv"
     
     # Step 1: Validate input JSON existence
+    # Returns quietly (no exception) so callers can continue.
     if not os.path.exists(json_path):
         print(f"Error: {json_path} does not exist.")
         return
@@ -25,6 +27,7 @@ def export_to_tsv():
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
         
+    # Each fact is a [word, predicate, text] triple.
     facts = data["facts"]
     print(f"Exporting {len(facts)} words to {tsv_path}...")
     
@@ -32,8 +35,10 @@ def export_to_tsv():
     os.makedirs(os.path.dirname(tsv_path), exist_ok=True)
     with open(tsv_path, "w", encoding="utf-8") as f:
         for term, pred, definition in facts:
+            # Only definition facts are exported.
             if pred == "definition":
                 # Clean up newlines and tabs
+                # Tabs and newlines would break the two-column TSV format, so they become spaces.
                 word = term.replace("\t", " ").replace("\n", " ").strip().lower()
                 defn = definition.replace("\t", " ").replace("\n", " ").strip()
                 f.write(f"{word}\t{defn}\n")

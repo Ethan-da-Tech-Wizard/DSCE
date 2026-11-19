@@ -16,10 +16,13 @@ Seeds:
 3. Grammar Rules: syntactic rules using flat triple representation.
 """
 
+# Usage: run from the repository root (`python3 scripts/seed_taxonomy_grammar.py`).
+# It writes ./dsce.sqlite in the current directory and performs no network access.
 import os
 import sys
 
 # Add project root to path
+# Lets the script import the `dsce` package without installing it (scripts/ is one level below the repo root).
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dsce.db_store import SqliteVialStore
@@ -27,11 +30,19 @@ from dsce.vial import Vial, Rule
 
 
 def seed_taxonomy_and_grammar():
+    """Build and save the taxonomy and grammar vials into ./dsce.sqlite.
+
+    Saving is idempotent: SqliteVialStore.save_vial replaces a vial with the same id.
+    """
+    # Relative path: the database lands in whatever directory the script is run from.
     db_path = "dsce.sqlite"
     store = SqliteVialStore(db_path)
     
     print("[*] Preparing biological taxonomy data...")
     
+    # Taxonomy encoding: each level is a (child, "located_in", parent) fact plus a
+    # (node, "is_a", rank) fact, so the lineage can be walked upward by chaining
+    # located_in. The facts are a small hand-picked sample, not a complete taxonomy.
     # 1. Animals Vial (tax_animalia)
     animal_facts = (
         ("animalia", "is_a", "kingdom"),
@@ -68,6 +79,7 @@ def seed_taxonomy_and_grammar():
         id="tax_animalia",
         concept="Biological taxonomy for Kingdom Animalia",
         facts=animal_facts,
+        # Evidence strings are attached to every axiom and surface in proof traces.
         evidence=("Catalogue of Life (catalogueoflife.org)",),
         confidence=1.0
     )
@@ -161,6 +173,7 @@ def seed_taxonomy_and_grammar():
 
     print("[*] Preparing English grammar and linguistics data...")
     
+    # Lexicon facts map a word to its part of speech; the grammar rules below match on these.
     # 5. Grammar Lexicon Vial (grammar_lexicon)
     lexicon_facts = (
         # Articles
@@ -212,6 +225,8 @@ def seed_taxonomy_and_grammar():
     store.save_vial(vial_lexicon)
     print("  [+] Seeded 'grammar_lexicon'")
 
+    # Rules compose phrases bottom-up (word -> noun phrase / verb phrase -> sentence)
+    # purely with premises/conclusions, using the same engine as all other reasoning.
     # 6. Grammar Rules Vial (grammar_rules)
     grammar_rules = (
         # Rule: A standalone noun forms a simple noun phrase
@@ -283,6 +298,7 @@ def seed_taxonomy_and_grammar():
                 ("?word", "part_of_speech", "noun"),
             ),
             conclusion=("?word", "is_a_gerund", "?is_gerund"),
+            # Heuristic only: any word ending in "ing" counts, so "king" or "ring" are also reported true.
             compute=lambda b: {"?is_gerund": str(b["?word"]).endswith("ing")}
         ),
     )

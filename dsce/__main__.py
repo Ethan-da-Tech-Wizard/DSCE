@@ -33,6 +33,9 @@ def parse_term(token: str):
     Converts booleans, integers, floats, and defaults to string.
     """
     # Step 1: Check boolean literals
+    # Parsing order matters: bool, then int, then float, then string. "?x" style
+    # variable names fall through to the string case, which is how the engine
+    # recognises variables.
     if token.lower() in ("true", "false"):
         return token.lower() == "true"
     # Step 2: Try parsing integer
@@ -54,6 +57,7 @@ def main(argv: list) -> int:
     """
     # Step 1: Parse optional database flags
     db_path = None
+    # Only a leading --db is recognised; the goal triple must follow the path.
     if argv and argv[0] == "--db":
         if len(argv) < 2:
             print("Error: --db flag requires a database path parameter.")
@@ -64,18 +68,21 @@ def main(argv: list) -> int:
     # Step 2: Instantiate engine with SQLite storage or built-in demo KB
     if db_path:
         store = SqliteVialStore(db_path)
+        # With a store the engine loads vials lazily from SQLite instead of holding them all in memory.
         engine = Engine(store=store)
     else:
         engine = build_engine()
 
     # Step 3: Parse goal query from remaining arguments
     if len(argv) == 3:
+        # Exactly three tokens form one (subject, predicate, object) goal.
         goals = [tuple(parse_term(t) for t in argv)]
     elif not argv:
         if db_path:
             print("Error: When querying a database, you must specify a triple goal query, e.g.:")
             print("  python -m dsce --db dsce.sqlite modesto located_in ?where")
             return 2
+        # Default showcase: the four queries that exercise chaining, computation and variable subjects.
         goals = [
             ("socrates", "is_mortal", "?answer"),
             ("courtyard", "area", "?a"),
@@ -90,10 +97,12 @@ def main(argv: list) -> int:
 
     # Step 4: Execute each goal query and display summary and proofs
     for i, goal in enumerate(goals):
+        # Print a separator line between goals but not before the first.
         if i:
             print("\n" + "=" * 72 + "\n")
         print(engine.ask(goal).summary())
     return 0
 
+# Exit status: 0 on success, 2 on usage errors.
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

@@ -8,6 +8,7 @@
 #          computations, proof rendering, and activation sparsity.
 # ==============================================================================
 
+# Run from the repo root so `dsce` is importable: python3 -m pytest tests (or unittest).
 import unittest
 
 from dsce.demo_kb import build_engine
@@ -17,6 +18,7 @@ from dsce.vial import Rule, Vial
 
 
 class TestUnification(unittest.TestCase):
+    """Pattern matching: variable binding, consistency with prior bindings, constant mismatch, unbound substitution."""
     def test_unify_binds_variables(self):
         b = unify(("?x", "is_a", "human"), ("socrates", "is_a", "human"), {})
         self.assertEqual(b, {"?x": "socrates"})
@@ -35,6 +37,7 @@ class TestUnification(unittest.TestCase):
 
 
 class TestFlood(unittest.TestCase):
+    """End-to-end queries against the demo knowledge base: chaining across vials, computation, sparsity, determinism and confidence."""
     def setUp(self):
         self.engine = build_engine()
 
@@ -61,12 +64,14 @@ class TestFlood(unittest.TestCase):
         self.assertEqual(result.answers[0].bindings["?a"], 625)
 
     def test_sparse_activation(self):
+        """Guards the sparsity claim: a query must wake only the vials it needs."""
         # A geometry query must not wake the philosophy or biology vials.
         result = self.engine.ask(("courtyard", "area", "?a"))
         self.assertIn("philosophers", result.dormant)
         self.assertIn("biology", result.dormant)
 
     def test_determinism(self):
+        """Repeating the same query must give identical results."""
         goal = ("?who", "is_a", "mammal")
         first = build_engine().ask(goal)
         second = build_engine().ask(goal)
@@ -88,6 +93,7 @@ class TestFlood(unittest.TestCase):
 
 
 class TestEngineBasics(unittest.TestCase):
+    """Engine bookkeeping: duplicate vial ids and the tick budget."""
     def test_duplicate_vial_id_rejected(self):
         engine = Engine()
         engine.add_vial(Vial(id="a", concept="a"))

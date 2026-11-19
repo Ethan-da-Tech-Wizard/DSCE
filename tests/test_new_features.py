@@ -8,6 +8,7 @@
 #          dynamic on-demand vial loading during query evaluation.
 # ==============================================================================
 
+# Requires only the standard library; the SQLite tests use throwaway temp files.
 import unittest
 import os
 import tempfile
@@ -19,6 +20,7 @@ from dsce.demo_kb import build_engine
 
 
 class TestConflicts(unittest.TestCase):
+    """Contradiction handling for "functional" predicates (one value per subject)."""
     def test_functional_predicate_conflict(self):
         engine = Engine()
         engine.register_predicate("height", functional=True)
@@ -62,6 +64,7 @@ class TestConflicts(unittest.TestCase):
 
 
 class TestSpecificity(unittest.TestCase):
+    """Ordering of answers where one is more detailed than another, by lexical containment or taxonomy."""
     def test_lexical_specificity(self):
         self.assertTrue(is_more_specific("tower of pie in ajo arizona", "tower of pie"))
         self.assertFalse(is_more_specific("tower of pie", "tower of pie in ajo arizona"))
@@ -99,7 +102,9 @@ class TestSpecificity(unittest.TestCase):
 
 
 class TestSqliteVialStore(unittest.TestCase):
+    """Round-trip persistence of vials and database-backed querying."""
     def setUp(self):
+        # Temporary database file, removed again in tearDown.
         self.db_fd, self.db_path = tempfile.mkstemp()
         self.store = SqliteVialStore(self.db_path)
         

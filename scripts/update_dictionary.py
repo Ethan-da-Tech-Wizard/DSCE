@@ -7,6 +7,8 @@
 #          ground triples, saves the updated vial, and triggers TSV export.
 # ==============================================================================
 
+# Network use: downloads one JSON file over HTTPS. Overwrites vials_synthesis/english_dictionary.json
+# and then regenerates scratch/dictionary.tsv. Paths are relative to the current directory.
 import urllib.request
 import json
 import os
@@ -14,12 +16,14 @@ import sys
 
 def download_and_format():
     """Downloads upstream GCIDE JSON, normalizes definitions, and exports TSV."""
+    # GCIDE (a free dictionary); license text is in docs/GCIDE_LICENSE.md.
     url = "https://raw.githubusercontent.com/aviaryan/gcide-dictionary-json/master/dictionary_minimal.json"
     json_dest = "vials_synthesis/english_dictionary.json"
     
     # Step 1: Download GCIDE payload over HTTPS
     print(f"Downloading GCIDE dictionary from {url}...")
     try:
+        # No timeout is set here, so a stalled connection can block indefinitely.
         response = urllib.request.urlopen(url)
         raw_data = response.read().decode('utf-8')
     except Exception as e:
@@ -42,6 +46,7 @@ def download_and_format():
     
     print(f"Converting {len(raw_dict)} words into DSCE triples...")
     for word, definition in raw_dict.items():
+        # Entries with an empty definition are dropped.
         if definition:
             defn = definition.strip()
             vial["facts"].append([word.lower(), "definition", defn])
@@ -53,6 +58,7 @@ def download_and_format():
         
     # Step 4: Rebuild TSV cache
     print("Vial update complete. Rebuilding TSV...")
+    # Make the sibling module build_dictionary_tsv importable, even when run from another directory.
     sys.path.append(os.path.abspath(os.path.dirname(__file__)))
     import build_dictionary_tsv
     build_dictionary_tsv.export_to_tsv()

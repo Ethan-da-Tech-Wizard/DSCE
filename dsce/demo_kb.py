@@ -43,6 +43,7 @@ def build_engine() -> Engine:
     """
     Constructs an in-memory Engine pre-populated with demo vials.
     """
+    # Everything is added in memory; nothing is read from disk or the network.
     engine = Engine()
 
     # Step 1: Add philosophers vial (ground facts regarding historical humans)
@@ -52,8 +53,10 @@ def build_engine() -> Engine:
         facts=(
             ("socrates", "is_a", "human"),
             ("plato", "is_a", "human"),
+            # Not used by any rule: a fact that exists but stays inert unless a goal mentions it (shows sparsity).
             ("plato", "student_of", "socrates"),
         ),
+        # Neighbor link: waking philosophers also wakes the rules vial, though no goal term names "biology".
         neighbors=("biology",),
         evidence=("Plato, Apology", "Diogenes Laertius, Lives"),
         confidence=0.99,
@@ -73,6 +76,7 @@ def build_engine() -> Engine:
                 name="mammals-are-mortal",
                 premises=(("?x", "is_a", "mammal"),),
                 conclusion=("?x", "is_mortal", True),
+                # Rule-level trust, multiplied into every fact this rule derives.
                 confidence=0.999,
             ),
         ),
@@ -116,6 +120,7 @@ def build_engine() -> Engine:
                     ("?r", "height", "?h"),
                 ),
                 conclusion=("?r", "area", "?a"),
+                # Pure arithmetic: premises bind ?w and ?h, the lambda supplies the new binding ?a.
                 compute=lambda b: {"?a": b["?w"] * b["?h"]},
             ),
         ),
@@ -131,10 +136,12 @@ def build_engine() -> Engine:
             ("courtyard", "width", 12),
             ("courtyard", "height", 30),
             ("plaza", "is_a", "square"),
+            # Only a side length: the plaza's area must be derived via the geometry rules (square -> rectangle -> area).
             ("plaza", "side", 25),
         ),
         neighbors=("geometry",),
         evidence=("site survey 2026-03",),
+        # Lower than 1.0 because a physical survey is fallible; shows up in the proof's confidence.
         confidence=0.97,
     ))
 

@@ -14,6 +14,7 @@ Downloads a public English dictionary JSON file (~2MB, containing 80,000+ defini
 formats it into a valid DSCE Vial format, and saves it to vials_synthesis/english_dictionary.json.
 """
 
+# Network use: fetches a public JSON file over HTTPS; nothing else is contacted.
 import json
 import os
 import sys
@@ -21,16 +22,19 @@ import urllib.request
 
 def download_and_compile():
     """Downloads remote dictionary JSON, cleans entries, and serializes DSCE vial."""
+    # Source: a Webster's-derived word -> definition map.
     url = "https://raw.githubusercontent.com/adambom/dictionary/master/dictionary.json"
     dest_vial = os.path.join("vials_synthesis", "english_dictionary.json")
     
     # Step 1: Download raw JSON payload
     print(f"[*] Downloading English dictionary from: {url}")
     try:
+        # The 15 s timeout stops the script hanging forever on a dead connection.
         with urllib.request.urlopen(url, timeout=15) as response:
             data = json.loads(response.read().decode("utf-8"))
     except Exception as e:
         print(f"[!] Network error downloading dictionary: {e}")
+        # Exit non-zero so shell pipelines can detect the failure.
         sys.exit(1)
         
     print(f"[+] Downloaded dictionary with {len(data):,} words.")
@@ -41,9 +45,11 @@ def download_and_compile():
     for word, definition in sorted(data.items()):
         word_clean = word.lower().strip()
         def_clean = definition.strip()
+        # Skip entries with an empty word or definition.
         if word_clean and def_clean:
             facts.append([word_clean, "definition", def_clean])
             
+    # Plain dict in the on-disk vial JSON schema (id, concept, confidence, evidence, facts); each fact is [word, "definition", text].
     vial = {
         "id": "english_dictionary",
         "concept": "Standard English Dictionary Definitions",
