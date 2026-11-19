@@ -24,6 +24,7 @@ import sqlite3
 from typing import Optional
 
 from dsce.facts import Fact, Pattern, Term
+from dsce.safe_eval import safe_compute
 from dsce.vial import Rule, Vial
 
 # Design note: every method opens its own short-lived connection and closes it
@@ -201,11 +202,11 @@ class SqliteVialStore:
                 conclusion = tuple(self._parse_term(t) for t in json.loads(conclusion_json))
                 
                 compute = None
-                # SECURITY NOTE: compute_body is executed with eval(), so the database must be
-                # trusted. A tampered database could run arbitrary code when a vial is loaded.
+                # compute_body is parsed by safe_compute (ast allow-list), never eval()ed, so a
+                # tampered database cannot run code when a vial is loaded.
                 if compute_body:
                     try:
-                        compute = eval(compute_body)
+                        compute = safe_compute(compute_body)
                     # A body that fails to compile leaves compute=None: the rule then fires
                     # without extra computed bindings instead of crashing the load.
                     except Exception:
