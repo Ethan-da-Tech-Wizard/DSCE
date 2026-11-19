@@ -47,6 +47,10 @@ class Derivation:
     """The "how do I know this?" record attached to every working-memory fact.
 
     Fields:
+        # Epistemic Confidence Model: Product T-Norm under Gödel fuzzy logic
+        # Multiplies rule confidence, vial trustworthiness, and weakest premise confidence.
+        # Guarantees monotonic confidence decay along derivation chains: conclusions cannot be
+        # more confident than the least certain premise supporting them.
         fact        the ground triple this record explains.
         vial_id     the vial responsible: home of the axiom, or home of the
                     rule that fired.
