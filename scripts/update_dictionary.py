@@ -23,8 +23,8 @@ def download_and_format():
     # Step 1: Download GCIDE payload over HTTPS
     print(f"Downloading GCIDE dictionary from {url}...")
     try:
-        # No timeout is set here, so a stalled connection can block indefinitely.
-        response = urllib.request.urlopen(url)
+        # 30 s timeout (same idea as download_dictionary.py) so a stalled connection cannot hang the script.
+        response = urllib.request.urlopen(url, timeout=30)
         raw_data = response.read().decode('utf-8')
     except Exception as e:
         print(f"Error downloading dictionary: {e}")
