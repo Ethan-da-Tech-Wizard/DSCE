@@ -31,7 +31,7 @@ from dsce.db_store import SqliteVialStore
 from dsce.vial import Vial
 
 # cities15000 = every city with population above 15,000.
-GEONAMES_URL = "http://download.geonames.org/export/dump/cities15000.zip"
+GEONAMES_URL = "https://download.geonames.org/export/dump/cities15000.zip"
 # Downloaded and extracted into the current working directory.
 ZIP_FILE = "cities15000.zip"
 TXT_FILE = "cities15000.txt"
