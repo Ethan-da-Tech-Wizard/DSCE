@@ -43,6 +43,18 @@
 //! "this rule cannot conclude anything for this match".
 
 // Arc lets a Native closure be shared cheaply when rules are cloned.
+// File role: the only place rule `compute` hooks are parsed and evaluated. Used by rule definitions loaded
+// from JSON or SQLite (db_store.rs / json_vials.rs parse the `compute` text with `Compute::expr`) and called
+// by the engine (engine.rs) after a rule's premises matched, to produce extra bindings for the conclusion.
+//
+// Pipeline for an expression: text -> `Parser::new` (tokens) -> `parse_expr` (tree of `Expr`) ->
+// `Expr::eval` (values). Parsing happens once at load; evaluation happens for every rule firing.
+//
+// Design decisions: a hand-written recursive-descent parser instead of a parser crate (the grammar is tiny
+// and the error messages can name the exact problem); checked integer arithmetic so overflow makes a rule
+// not fire instead of wrapping; every failure is `None` so one bad match never aborts a whole query.
+//
+// Tests at the bottom cover each operator, precedence, soft failures and string concatenation.
 use std::fmt;
 use std::sync::Arc;
 
@@ -51,6 +63,7 @@ use crate::facts::{Bindings, Term};
 /// A rule's optional deterministic computation from bindings to EXTRA
 /// bindings — what lets a conclusion contain a value no premise supplied.
 #[derive(Clone)]
+// Two variants because library users want closures while stored rules must be text (a closure cannot be written to a database).
 pub enum Compute {
     /// Parsed arithmetic program; serializable via [`Compute::source`].
     Expr(ExprProgram),
@@ -61,11 +74,13 @@ pub enum Compute {
 
 impl Compute {
     /// Parse an expression program, e.g. `"?a = ?w * ?h"`.
+    /// Errors: the parse error names the problem (bad token, trailing tokens, missing `)`), so a broken rule is rejected at load time.
     pub fn expr(source: &str) -> Result<Compute, String> {
         Ok(Compute::Expr(ExprProgram::parse(source)?))
     }
 
     /// Wrap a native closure.
+    // `'static` because the closure is stored inside an Arc inside a rule that may outlive the caller's stack frame.
     pub fn native(f: impl Fn(&Bindings) -> Bindings + Send + Sync + 'static) -> Compute {
         Compute::Native(Arc::new(f))
     }
@@ -74,6 +89,7 @@ impl Compute {
     /// to merge in. `None` means the computation is undefined for these
     /// bindings (unbound variable, division by zero, ...) and the rule
     /// firing should be skipped.
+    // Called by the engine for every successful premise match; the result is merged into the match's bindings.
     pub fn eval(&self, bindings: &Bindings) -> Option<Bindings> {
         match self {
             Compute::Expr(program) => program.eval(bindings),
@@ -91,6 +107,7 @@ impl Compute {
     }
 }
 
+// Manual impl because closures have no Debug; printing the source text is enough for logs and test failures.
 impl fmt::Debug for Compute {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -105,6 +122,7 @@ impl fmt::Debug for Compute {
 /// Assignments run in order and later ones may reference variables defined
 /// by earlier ones.
 #[derive(Debug, Clone)]
+// `source` is kept verbatim so `Compute::source` can write the original text back to a database unchanged.
 pub struct ExprProgram {
     source: String,
     assignments: Vec<(String, Expr)>,
@@ -114,6 +132,7 @@ impl ExprProgram {
     /// Parse `?var = expr; ?var2 = expr2`. Errors name the offending statement so
     /// a bad rule is rejected at load time rather than failing silently during a query.
     pub fn parse(source: &str) -> Result<ExprProgram, String> {
+        // Assignments are stored in written order because later ones may read earlier results (see `eval`).
         let mut assignments = Vec::new();
         // Statements are separated by ';' and trailing/empty ones are ignored.
         for stmt in source.split(';') {
@@ -130,6 +149,8 @@ impl ExprProgram {
             if !target.starts_with('?') {
                 return Err(format!("assignment target {target:?} must be a ?variable"));
             }
+
+            // A fresh parser per statement: tokens never leak across the `;` boundary.
             let mut parser = Parser::new(body)?;
             let expr = parser.parse_expr()?;
             // Reject trailing garbage such as "?a = 1 2".
@@ -151,15 +172,19 @@ impl ExprProgram {
     fn eval(&self, bindings: &Bindings) -> Option<Bindings> {
         let mut extra = Bindings::new();
         for (target, expr) in &self.assignments {
+            // `?` aborts the whole program on the first undefined assignment: a half-computed result would be worse than none.
             let value = expr.eval(bindings, &extra)?;
             extra.insert(target.clone(), value.into_term());
         }
+
+        // Returns only the NEW bindings; the engine merges them with the premise bindings itself.
         Some(extra)
     }
 }
 
 #[derive(Debug, Clone)]
 /// Expression syntax tree produced by the parser.
+// Tree shape: leaves are literals and variables; `Neg` is unary minus; `Bin` carries the operator and two boxed children.
 enum Expr {
     Int(i64),
     Float(f64),
@@ -171,6 +196,7 @@ enum Expr {
 
 #[derive(Debug, Clone, Copy)]
 /// Binary arithmetic operators.
+// Add/Sub/Mul/Div are the only operators (no modulo, powers or comparisons), which keeps evaluation total and easy to audit.
 enum Op {
     Add,
     Sub,
@@ -181,6 +207,7 @@ enum Op {
 /// Intermediate value: keeps ints exact until a float enters; strings
 /// participate only in `+` (concatenation).
 #[derive(Debug, Clone)]
+// Separate from `Term` so arithmetic can promote Int to Float without touching the fact-store type.
 enum Value {
     Int(i64),
     Float(f64),
@@ -188,6 +215,7 @@ enum Value {
 }
 
 impl Value {
+    // This is the only place a computed float becomes a Term; Term::float wraps it so the value can live in hash-based fact sets.
     // Convert a computed value back into a fact term (floats go through Term::float to get a hashable wrapper).
     fn into_term(self) -> Term {
         match self {
@@ -198,6 +226,7 @@ impl Value {
     }
 
     /// Numeric view; `None` for strings so arithmetic on them fails softly.
+    // Int -> f64 can lose precision above 2^53; acceptable because mixed int/float arithmetic is already inexact.
     fn as_f64(&self) -> Option<f64> {
         match self {
             Value::Int(i) => Some(*i as f64),
@@ -207,6 +236,7 @@ impl Value {
     }
 
     /// Text view, used when `+` concatenates a string with anything.
+    // Used only for string concatenation, so numbers inside generated code appear as plain text.
     fn render(&self) -> String {
         match self {
             Value::Int(i) => i.to_string(),
@@ -225,25 +255,31 @@ impl Expr {
             Expr::Int(i) => Some(Value::Int(*i)),
             Expr::Float(f) => Some(Value::Float(*f)),
             Expr::Str(s) => Some(Value::Str(s.clone())),
+            // Lookup order matters: `extra` first, so an assignment to a variable that is also bound by a premise shadows the premise value.
             Expr::Var(name) => {
                 let term = extra.get(name).or_else(|| bindings.get(name))?;
                 match term {
                     Term::Int(i) => Some(Value::Int(*i)),
                     Term::Float(f) => Some(Value::Float(f.0)),
                     Term::Str(s) => Some(Value::Str(s.clone())),
+                    // Booleans exist in the fact model but have no meaning in arithmetic, so they make the expression undefined.
                     Term::Bool(_) => None, // no boolean algebra in this DSL
                 }
             }
+
+            // checked_neg only fails for i64::MIN, whose negation does not fit.
             Expr::Neg(inner) => match inner.eval(bindings, extra)? {
                 Value::Int(i) => Some(Value::Int(i.checked_neg()?)),
                 Value::Float(f) => Some(Value::Float(-f)),
                 Value::Str(_) => None,
             },
+            // Both sides are evaluated before the operator is looked at, so an unbound variable on either side makes the whole operation undefined.
             Expr::Bin(op, lhs, rhs) => {
                 let l = lhs.eval(bindings, extra)?;
                 let r = rhs.eval(bindings, extra)?;
                 match op {
                     // checked_* arithmetic returns None on i64 overflow instead of wrapping or panicking.
+                    // Arm order is significant: Int+Int first (exact), then the string case, then everything else as float.
                     Op::Add => match (l, r) {
                         (Value::Int(a), Value::Int(b)) => Some(Value::Int(a.checked_add(b)?)),
                         // If either side is a string, `+` concatenates —
@@ -263,6 +299,7 @@ impl Expr {
                         (l, r) => Some(Value::Float(l.as_f64()? * r.as_f64()?)),
                     },
                     // Division is always true division (Python semantics).
+                    // Zero is checked on the float value, which also catches 0.0 and -0.0, so no infinity or NaN can enter the fact store.
                     Op::Div => {
                         let d = r.as_f64()?;
                         if d == 0.0 {
@@ -279,6 +316,7 @@ impl Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 // Lexer output tokens. Numbers stay as text until the parser decides int vs float.
+// Tokens carry text for numbers so `parse_factor` can decide int versus float from the presence of a dot.
 enum Token {
     Num(String),
     Str(String),
@@ -293,6 +331,7 @@ enum Token {
 
 /// Recursive-descent parser over the token list. Grammar (lowest to highest precedence):
 /// expr, term, factor, so * and / bind tighter than + and -.
+// `pos` indexes the next unread token; the parser never backtracks, so one left-to-right pass is enough.
 struct Parser {
     tokens: Vec<Token>,
     pos: usize,
@@ -300,6 +339,7 @@ struct Parser {
 
 impl Parser {
     // Tokenise `src`. Whitespace is skipped; any unknown character is an error.
+    // Lexer. Works on `Vec<char>` rather than bytes so non-ASCII characters inside string literals stay intact.
     fn new(src: &str) -> Result<Parser, String> {
         let mut tokens = Vec::new();
         let chars: Vec<char> = src.chars().collect();
@@ -307,7 +347,9 @@ impl Parser {
         while i < chars.len() {
             let c = chars[i];
             match c {
+                // Whitespace separates tokens but is otherwise ignored.
                 ' ' | '\t' | '\n' | '\r' => i += 1,
+                // Single-character operators and parentheses: one token each, advance one character.
                 '+' => {
                     tokens.push(Token::Plus);
                     i += 1;
@@ -344,6 +386,8 @@ impl Parser {
                                 i += 1;
                                 break;
                             }
+
+                            // Backslash escapes: only the six listed sequences are valid, so a typo like "\d" fails at load time rather than silently producing a backslash.
                             Some('\\') => {
                                 let escaped = chars
                                     .get(i + 1)
@@ -367,6 +411,8 @@ impl Parser {
                     }
                     tokens.push(Token::Str(text));
                 }
+
+                // The leading '?' is kept in the variable name, matching how variables are spelled in facts and rules (`?w`, not `w`).
                 // Variable: '?' followed by letters, digits or '_'; a bare '?' is rejected.
                 '?' => {
                     let start = i;
@@ -379,6 +425,8 @@ impl Parser {
                     }
                     tokens.push(Token::Var(chars[start..i].iter().collect()));
                 }
+
+                // Lexing "1.2.3" succeeds here and fails later in parse_factor, which keeps the lexer free of numeric rules.
                 // Number: digits and dots are slurped together, and validity is checked in parse_factor.
                 c if c.is_ascii_digit() || c == '.' => {
                     let start = i;
@@ -394,11 +442,13 @@ impl Parser {
     }
 
     // Look at the next token without consuming it.
+    // Used by the precedence loops to decide whether another operator follows.
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.pos)
     }
 
     // Consume and return the next token (None at end of input).
+    // Cloned (tokens are small) so callers can keep using the parser while holding the token.
     fn advance(&mut self) -> Option<Token> {
         let tok = self.tokens.get(self.pos).cloned();
         if tok.is_some() {
@@ -408,6 +458,7 @@ impl Parser {
     }
 
     // Succeeds only when every token has been consumed.
+    // Guards against inputs such as "?a = 1 2" where the first expression parses fine but extra tokens follow.
     fn expect_end(&self) -> Result<(), String> {
         if self.pos == self.tokens.len() {
             Ok(())
@@ -417,6 +468,7 @@ impl Parser {
     }
 
     /// expr := term (('+' | '-') term)*
+    // Left-associative: "a - b - c" builds ((a - b) - c) because each new term becomes the right child of the running tree.
     fn parse_expr(&mut self) -> Result<Expr, String> {
         let mut lhs = self.parse_term()?;
         while let Some(tok) = self.peek() {
@@ -433,6 +485,7 @@ impl Parser {
     }
 
     /// term := factor (('*' | '/') factor)*
+    // Same loop shape one precedence level up, which is what makes `*` and `/` bind tighter than `+` and `-`.
     fn parse_term(&mut self) -> Result<Expr, String> {
         let mut lhs = self.parse_factor()?;
         while let Some(tok) = self.peek() {
@@ -449,6 +502,7 @@ impl Parser {
     }
 
     /// factor := NUM | VAR | '-' factor | '(' expr ')'
+    // Entry for the highest-precedence items. Parentheses recurse back into `parse_expr`, resetting precedence inside them.
     fn parse_factor(&mut self) -> Result<Expr, String> {
         match self.advance() {
             Some(Token::Num(text)) => {
@@ -481,15 +535,18 @@ impl Parser {
 
 #[cfg(test)]
 // Unit tests for the compute DSL: arithmetic, precedence, soft failures and string handling.
+// Each test pins one behaviour of the DSL; together they define the language described in the module docs.
 mod tests {
     use super::*;
 
     // Test helper: build a Bindings map from (name, term) pairs.
+    // Builds a Bindings map from literal pairs so each test can state its inputs on one line.
     fn bindings(pairs: &[(&str, Term)]) -> Bindings {
         pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
     }
 
     #[test]
+    // The doc example: two bound integers multiplied. Int times Int must stay an Int (200, not 200.0).
     fn multiplies_bound_ints() {
         let c = Compute::expr("?a = ?w * ?h").unwrap();
         let extra = c
@@ -499,6 +556,7 @@ mod tests {
     }
 
     #[test]
+    // Increment pattern used by counting rules (e.g. peano-style `?next = ?v + 1`).
     fn successor_expression() {
         let c = Compute::expr("?next = ?v + 1").unwrap();
         let extra = c.eval(&bindings(&[("?v", Term::Int(41))])).unwrap();
@@ -506,6 +564,7 @@ mod tests {
     }
 
     #[test]
+    // 2 + 3 * 4 must be 14 (not 20), and parentheses must override that; also checks a program with two statements.
     fn precedence_and_parentheses() {
         let c = Compute::expr("?x = 2 + 3 * 4; ?y = (2 + 3) * 4").unwrap();
         let extra = c.eval(&Bindings::new()).unwrap();
@@ -514,6 +573,7 @@ mod tests {
     }
 
     #[test]
+    // Division always returns a float (5 / 2 = 2.5), and dividing by zero must make the rule skip, not crash.
     fn division_yields_float_and_guards_zero() {
         let c = Compute::expr("?half = ?v / 2").unwrap();
         let extra = c.eval(&bindings(&[("?v", Term::Int(5))])).unwrap();
@@ -525,12 +585,14 @@ mod tests {
     }
 
     #[test]
+    // A variable no premise bound must produce None; the engine then simply does not fire that rule instance.
     fn unbound_variable_fails_softly() {
         let c = Compute::expr("?a = ?missing * 2").unwrap();
         assert!(c.eval(&Bindings::new()).is_none());
     }
 
     #[test]
+    // Sequential semantics: the second assignment reads the first one's result from `extra`.
     fn later_assignment_sees_earlier() {
         let c = Compute::expr("?double = ?v * 2; ?quad = ?double * 2").unwrap();
         let extra = c.eval(&bindings(&[("?v", Term::Int(3))])).unwrap();
@@ -538,6 +600,7 @@ mod tests {
     }
 
     #[test]
+    // The assembler use case: gluing two code fragments with `+`.
     fn string_concatenation() {
         let c = Compute::expr("?code = ?code1 + ?code2").unwrap();
         let extra = c
@@ -553,6 +616,7 @@ mod tests {
     }
 
     #[test]
+    // Quoted literal plus an Int: the Int is rendered as text, and the `\n` escape in the double-quoted literal becomes a real newline.
     fn string_literals_and_mixed_concat() {
         let c = Compute::expr("?msg = 'score: ' + ?points + \"\\n\"").unwrap();
         let extra = c.eval(&bindings(&[("?points", Term::Int(42))])).unwrap();
@@ -560,12 +624,14 @@ mod tests {
     }
 
     #[test]
+    // Only `+` may take a string operand; `*` on a string must be undefined (None), never a panic or an accidental repeat-string feature.
     fn arithmetic_on_strings_fails_softly() {
         let c = Compute::expr("?x = ?s * 2").unwrap();
         assert!(c.eval(&bindings(&[("?s", Term::str("abc"))])).is_none());
     }
 
     #[test]
+    // `source()` must return the exact original text for Expr (what db_store persists) and None for native closures (which cannot be persisted).
     fn source_round_trips() {
         let c = Compute::expr("?a = ?w * ?h").unwrap();
         assert_eq!(c.source(), Some("?a = ?w * ?h"));
