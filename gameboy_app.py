@@ -107,13 +107,38 @@ calc_frame.pack(pady=10, padx=10, fill='both', expand=True)
 display = tk.Entry(calc_frame, font=('Arial', 16), justify='right', bd=5, bg='#1e1e1e', fg='white', insertbackground='white')
 display.pack(fill='x', padx=10, pady=5)
 
+# Safe arithmetic evaluator for the display text. Only numbers, + - * / // % ** and unary +/-
+# are accepted (checked on the parsed ast), so typed text can never run arbitrary Python.
+def safe_eval_arith(text):
+    import ast
+    import operator
+    ops = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+           ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
+           ast.Mod: operator.mod, ast.Pow: operator.pow}
+    unary = {ast.UAdd: operator.pos, ast.USub: operator.neg}
+
+    def walk(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) \
+                and not isinstance(node.value, bool):
+            return node.value
+        if isinstance(node, ast.BinOp) and type(node.op) in ops:
+            left, right = walk(node.left), walk(node.right)
+            # Cap exponents so a typed 9**9**9 cannot freeze the UI.
+            if isinstance(node.op, ast.Pow) and abs(right) > 1000:
+                raise ValueError('exponent too large')
+            return ops[type(node.op)](left, right)
+        if isinstance(node, ast.UnaryOp) and type(node.op) in unary:
+            return unary[type(node.op)](walk(node.operand))
+        raise ValueError('unsupported expression')
+
+    return walk(ast.parse(text.strip(), mode='eval').body)
+
 # Calculator button handler: '=' evaluates the display, 'C' clears, anything else is appended.
 def press_key(key):
     if key == '=':
         try:
-            # SECURITY NOTE: eval() runs whatever text is in the display. The Entry is also
-            # typeable, so arbitrary Python can be executed; fine for a toy demo only.
-            val = eval(display.get())
+            # The Entry is typeable, so the text is untrusted: safe_eval_arith only does arithmetic.
+            val = safe_eval_arith(display.get())
             if float(val) > float(CALC_LIMIT):
                 display.delete(0, tk.END)
                 display.insert(tk.END, 'OVER LIMIT!')
