@@ -33,10 +33,21 @@
 //! `compute` strings are parsed by [`crate::compute`] at load time — a bad
 //! expression fails the load loudly instead of silently dropping logic.
 
+// File role: loader for the JSON knowledge base under `vials_synthesis/` (patterns and libraries). Used by
+// main.rs and the GUI to build an `Engine` from a directory, and by tests/synthesis_tests.rs.
+//
+// Flow: directory walk (sorted) -> `vial_from_json` per file (serde into *Doc structs, then typed terms) ->
+// `engine_from_dir` adds each vial to a fresh `Engine` and registers predicate metadata.
+//
+// Error policy: everything returns `Result<_, String>` and every message names the file, vial and rule, so a
+// typo in a data file is easy to find. Nothing here panics on bad input.
+//
+// Tests at the bottom check the happy path and the "bad compute fails loudly" rule.
 use std::fs;
 use std::path::{Path, PathBuf};
 
 // serde derives the JSON-to-struct mapping for the two *Doc types below.
+// Deserialize is used only for the private *Doc mirror structs; the public Vial/Rule types have no serde dependency.
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -47,12 +58,14 @@ use crate::facts::{Fact, Pattern};
 use crate::vial::{Rule, Vial};
 
 /// Serde default for a missing "confidence": fully trusted (1.0).
+// serde needs a function (not a literal) for `#[serde(default = ...)]`. 1.0 means "fully trusted" when a file does not say.
 fn default_confidence() -> f64 {
     1.0
 }
 
 #[derive(Deserialize)]
 /// On-disk shape of a rule. Premises/conclusion stay as raw JSON `Value`s here and are converted into typed terms afterwards, so errors can name the rule.
+// Mirrors the JSON rule object one-to-one. `premises` may be omitted (an unconditional rule); `compute` is optional.
 struct RuleDoc {
     name: String,
     #[serde(default)]
@@ -66,6 +79,7 @@ struct RuleDoc {
 
 #[derive(Deserialize)]
 /// On-disk shape of a vial. Only `id` is required; every other field defaults to empty/1.0, which keeps hand-written vial files short.
+// Mirrors the JSON vial object. Unknown JSON keys are ignored by serde's default behaviour, which lets files carry extra notes.
 struct VialDoc {
     id: String,
     #[serde(default)]
@@ -83,13 +97,18 @@ struct VialDoc {
 }
 
 // Decode one JSON triple, prefixing any error with `context` (e.g. which rule of which vial).
+// Thin wrapper so every triple error in this file carries a location prefix such as `rule "area" in vial "grid_layout"`.
 fn triple(value: &Value, context: &str) -> Result<Pattern, String> {
     triple_from_json(value).map_err(|e| format!("{context}: {e}"))
 }
 
 /// Parse one vial from JSON text.
+// Errors: invalid JSON, a triple that is not a 3-element array, or a compute expression that fails to parse.
+// The order of facts and rules in the file is preserved, which keeps rule evaluation order deterministic.
 pub fn vial_from_json(text: &str) -> Result<Vial, String> {
     let doc: VialDoc = serde_json::from_str(text).map_err(|e| format!("bad vial JSON: {e}"))?;
+
+    // Facts and rules are converted separately so each error message can say which kind of item failed.
     let facts: Vec<Fact> = doc
         .facts
         .iter()
@@ -97,6 +116,7 @@ pub fn vial_from_json(text: &str) -> Result<Vial, String> {
         .collect::<Result<_, _>>()?;
     let mut rules: Vec<Rule> = Vec::new();
     for rule_doc in doc.rules {
+        // Built once per rule and reused by every error message below.
         let context = format!("rule {:?} in vial {:?}", rule_doc.name, doc.id);
         let premises = rule_doc
             .premises
@@ -105,6 +125,7 @@ pub fn vial_from_json(text: &str) -> Result<Vial, String> {
             .collect::<Result<Vec<_>, _>>()?;
         let conclusion = triple(&rule_doc.conclusion, &context)?;
         // Parse the compute DSL now so a malformed expression fails the load instead of being silently ignored later.
+        // Parsing here (rather than at query time) is the "fail loudly" guarantee from the module docs.
         let compute = match rule_doc.compute {
             None => None,
             Some(src) => Some(Compute::expr(&src).map_err(|e| format!("{context}: bad compute: {e}"))?),
@@ -129,6 +150,7 @@ pub fn vial_from_json(text: &str) -> Result<Vial, String> {
 }
 
 /// Load one `.json` vial file.
+// Reads the whole file as UTF-8; the returned error includes the path so a bad file in a big directory is easy to find.
 pub fn load_vial_file(path: impl AsRef<Path>) -> Result<Vial, String> {
     let path = path.as_ref();
     let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
@@ -139,6 +161,7 @@ pub fn load_vial_file(path: impl AsRef<Path>) -> Result<Vial, String> {
 ///
 /// Paths are visited in sorted order so the returned vial list — and
 /// therefore everything the engine derives from it — is deterministic.
+// Errors: unreadable directory or the first vial file that fails to parse (loading stops at the first error).
 pub fn load_vials_dir(dir: impl AsRef<Path>) -> Result<Vec<Vial>, String> {
     let dir = dir.as_ref();
     let mut paths: Vec<PathBuf> = Vec::new();
@@ -158,14 +181,21 @@ pub fn load_vials_dir(dir: impl AsRef<Path>) -> Result<Vec<Vial>, String> {
 ///   API documentation that rules can match but that never emits sand —
 ///   shared doc vocabulary ("None", "size", shell command strings) must not
 ///   build activation bridges between unrelated libraries.
+// Called by: main.rs (CLI queries), gui_main.rs and the integration tests. Errors: any load error, or a vial
+// that the engine rejects in `add_vial` (for example a duplicate id).
 pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
     let mut engine = Engine::new();
     for vial in load_vials_dir(dir)? {
         engine.add_vial(vial)?;
     }
+
+    // Functional predicates: a subject has at most one value, so two different values raise a conflict warning.
     engine.register_predicate("located_in", true);
     engine.register_predicate("height", true);
     // Annotation predicates are documentation-like facts that rules may match but that do not carry activation (see the doc comment above).
+    // Annotation list: API-documentation vocabulary (function signatures, install/build/run commands, URLs).
+    // Rules may match these facts, but they carry no activation, so shared words like "None" or "size" cannot
+    // connect unrelated libraries through the spreading-activation flood.
     for annotation in [
         "function",
         "param",
@@ -187,6 +217,7 @@ pub fn engine_from_dir(dir: impl AsRef<Path>) -> Result<Engine, String> {
 }
 
 // Recursively gather every `*.json` file under `dir` into `out` (unordered; the caller sorts).
+// Depth-first walk; directories are recognised before extensions so a directory named `x.json` is still descended into.
 fn collect_json_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
     let entries = fs::read_dir(dir).map_err(|e| format!("cannot read directory {}: {e}", dir.display()))?;
     for entry in entries {
@@ -203,11 +234,13 @@ fn collect_json_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> 
 
 #[cfg(test)]
 // Tests cover successful parsing and the "bad compute fails loudly" guarantee.
+// Test data is written inline as raw strings, so each test shows the exact file format it exercises.
 mod tests {
     use super::*;
     use crate::facts::Term;
 
     #[test]
+    // Checks that integer terms keep their JSON type (Int, not string), the compute hook is attached, and an omitted confidence defaults to 1.0.
     fn parses_facts_rules_and_compute() {
         let vial = vial_from_json(
             r#"{
@@ -230,6 +263,7 @@ mod tests {
     }
 
     #[test]
+    // "?x = )(" is syntactically invalid; the load must fail with a message mentioning "bad compute" instead of dropping the rule.
     fn bad_compute_fails_loudly() {
         let err = vial_from_json(
             r#"{"id": "t", "rules": [{"name": "r", "premises": [],
